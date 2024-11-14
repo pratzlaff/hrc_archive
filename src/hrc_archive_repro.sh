@@ -1,5 +1,8 @@
 #! /bin/bash
 
+set -e
+set -o pipefail
+
 [ $# -eq 2 ] || {
     echo "Usage: $0 indir outdir" 2>&1
     exit 1
