@@ -1,0 +1,85 @@
+#!/usr/bin/env python
+
+"""
+dmmakepar does not set the comment value "correctly".  It puts the
+units at the end of the comment; but the DM and the real obs.par
+files needs to have the comment at the beginning of the comment.
+"""
+
+import sys
+from pycrates import read_file
+
+
+def map_data_type(key):
+    'Map data type returned by crates to parameter data type'
+    import numpy as np
+
+    val = "{}".format(key.value)
+    if isinstance(key.value, (str, np.str)):
+        dtype = "s"
+        val = '"{}"'.format(val)
+    elif isinstance(key.value, (int, np.integer)):
+        dtype = "i"
+    elif isinstance(key.value, (float,)):
+        dtype = "r"
+    elif isinstance(key.value, (bool, np.bool_)):
+        dtype = "b"
+        val = "yes" if key.value else "no"
+    else:
+        print((key.name.lower(), key.value, type(key.value)))
+        print("Unknown data type. Using string")
+        dtype = "s"
+        val = '"{}"'.format(val)
+
+    return val, dtype
+
+
+def make_obspar(infile, outfile):
+    'Main routine'
+    tab = read_file(infile)
+
+    with open(outfile, "w") as outpar:
+        for key_name in tab.get_keynames():
+            key = tab.get_key(key_name)
+
+            unit = key.unit
+            if unit:
+                comment = '"[{}] {}"'.format(unit, key.desc)
+            else:
+                comment = '"{}"'.format(key.desc)
+
+            val, dtype = map_data_type(key)
+
+            param = ",".join([key_name.lower(), dtype, "h", val, "", "",
+                              comment])+"\n"
+            outpar.write(param)
+
+
+def update_boresight(asolfile, outfile):
+    'Update par file with values from asol file'
+    asol = read_file(asolfile)
+    ra_pnt = asol.get_key_value("RA_PNT")
+    dec_pnt = asol.get_key_value("DEC_PNT")
+    roll_pnt = asol.get_key_value("ROLL_PNT")
+
+    import paramio as pio
+    obspar = pio.paramopen(outfile, "rwL")   # Force learn mode
+    pio.pputd(obspar, "ra_pnt", ra_pnt)
+    pio.pputd(obspar, "dec_pnt", dec_pnt)
+    pio.pputd(obspar, "roll_pnt", roll_pnt)
+    pio.pputd(obspar, "ra_nom", ra_pnt)
+    pio.pputd(obspar, "dec_nom", dec_pnt)
+    pio.pputd(obspar, "roll_nom", roll_pnt)
+    pio.pputd(obspar, "dy_avg", 0.0)
+    pio.pputd(obspar, "dz_avg", 0.0)
+    pio.pputd(obspar, "dth_avg", 0.0)
+    pio.paramclose(obspar)
+
+
+if __name__ == '__main__':
+    if len(sys.argv) != 4:
+        print("Usage: make_par evtfile asolfile outfile")
+        sys.exit(1)
+
+    make_obspar(sys.argv[1], sys.argv[3])
+    update_boresight(sys.argv[2], sys.argv[3])
