@@ -1,0 +1,42 @@
+All the steps and analysis we want to apply in the HRC pipeline
+X: not yet implemented
+Y: manual follow-ups
+
+* download evt1,asol,pcad,bpix,fov,mtl,msk,dtf,std_flt --> goes to /data/hrc/[is]/NNNNN
+
+* [X] dmextract to get light curve for full chip,
+	determine time intervals unaffected by flaring
+	[use sigma-clipping to exclude bins with large rates, compute starting sigma using rates in the range min(rate):median(rate)+(median(rate)-min(rate)]
+	store as NNNNN/analysis/quiet_gti and its complement as NNNNN/analysis/flaring_gti
+
+* [X] compute tailgate flag for each event and store in status bit 3
+	[flag if given event has another event in a pillbox of past depth 50 ms and radius TBD [20 or 30] pix]
+
+* [X] compute derolled coordinates and store as additional columns X2,Y2
+
+* run the steps in chandra_repro to get new NNNNN/repro/evt2 file:
+	update bad pixel file using hrc_build_badpix
+	update aspect solution
+	run hrc_process_events to reapply latest gain, degap, bad pix, etc.
+	apply GTI filtering
+	recompute deadtime correction and update header
+	apply status bit filtering
+
+* [X] filter evt2 on tailgated events
+
+* if grating observation, construct NNNNN/repro/evt2a from NNNNN/repro/evt2:
+	[X] apply tilt correction
+	obtain 0th-order location using tgdetect
+	construct region mask using tg_create_mask
+	run tg_resolve_events
+
+	HRC-S only: apply (tg_lam,PI) background filtering
+	HRC-I only: apply PI filtering
+
+	extract PHA spectra with tgextract --> NNNNN/analysis/NNNNN_pha2
+	run mktgresp to compute grating ARFs and RMFs --> NNNNN/analysis/NNNNN_{arf,rmf}_[pm][123]
+
+* [Y] run cxc-obspars to extract obscat parameters for OBSID
+	--> /data/hrc/i/datahrcidx_obspar.rdb
+	--> /data/hrc/s/datahrcsidx_obspar.rdb
+    	[open to rename!]
