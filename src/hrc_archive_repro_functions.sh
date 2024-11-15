@@ -3,14 +3,15 @@
 asol_stack()
 {
     local dir="$1"
-    \ls "$dir"/pcadf*asol1.fits* | perl -le 'chomp(@f=<>); print join(",", @f)'
+    #\ls "$dir"/pcadf*asol1.fits* | perl -le 'chomp(@f=<>); print join(",", @f)'
+    \ls -1 "$dir"/pcadf*asol1.fits* | \tr '\n' , | \sed 's/,$/\n/'
 }
 
 get_type()
 {
     local dir="$1"
     local type="$2"
-    \ls "$dir/"*"${type}.fits"* | tail -1
+    \ls "$dir/"*"${type}.fits"* | \tail -1
 }
 
 get_evt1()
@@ -21,6 +22,11 @@ get_evt1()
 get_flt1()
 {
     get_type "$1/secondary" flt1
+}
+
+get_mtl1()
+{
+    get_type "$1/secondary" mtl1
 }
 
 get_dtf1()
@@ -75,6 +81,7 @@ rangelev_widthres_set()
     [ "$date_obs" \> 2000-10-05 ] && widthres=2
     dmhedit infile="$evt" filelist=none operation=add key=rangelev value=$rangelev
     dmhedit infile="$evt" filelist=none operation=add key=widthres value=$widthres
+    echo $rangelev $widthres
 }
 
 make_response()
@@ -108,7 +115,7 @@ make_response()
 	# end up with m1,p1,m2,p2,m3,p3,etc
 	local ostr=p$tg_m
 	[ $tg_m -lt 0 ] && ostr=m$(( -$tg_m ))
-	local rmf="$outdir/${obsid}_rmf_${grating_arm}_${ostr}.fits"
+	local rmf="$outdir/${obsid}_rmf_${grating_arm,,}_${ostr}.fits"
 
 	punlearn mkgrmf
 	mkgrmf \
@@ -126,7 +133,7 @@ make_response()
 
 	punlearn mkgarf
 	punlearn fullgarf
-	mkdir -p "$outdir/fullgarf"
+	\mkdir -p "$outdir/fullgarf"
 	fullgarf \
             "$pha2" \
             "$row" \
@@ -139,7 +146,7 @@ make_response()
             maskfile=NONE \
             clobber=yes
 	\mv "$outdir/fullgarf/${obsid}_${grating_arm}_${tg_m}_garf.fits" \
-	   "$outdir/${obsid}_arf_${grating_arm}_${ostr}.fits"
+	   "$outdir/${obsid}_arf_${grating_arm,,}_${ostr}.fits"
     done
     \rm -rf "$outdir/fullgarf"
 }

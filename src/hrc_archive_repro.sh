@@ -4,7 +4,7 @@ set -e
 set -o pipefail
 
 [ $# -eq 2 ] || {
-    echo "Usage: $0 indir outdir" 2>&1
+    \echo "Usage: $0 indir outdir" 2>&1
     exit 1
 }
 
@@ -43,26 +43,44 @@ obsid=$(printf %05d $(dmkeypar "$fov1" obs_id ec+))
 
 [[ $detnam =~ hrc-[is] ]] ||
 {
-  echo "This script only handles HRC data." 1>&2
+  \echo "This script only handles HRC data." 1>&2
   exit 1
 }
 
 #
-# Decompress original evt1 since it'll be run through
-# hrc_process_events multiple times. The decompressed file can be
-# deleted at the end of the script.
+# patch_hrc_ssc
 #
-# If the original evt1 is not compressed, then copy it, since
-# {ra,dec,roll}_nom will be modified later.
-#
-evt1_old=$(get_evt1 "$indir")
-evt1_old_tmp="$outdir/"$(basename "$evt1_old" | sed s/.gz$//).tmp
-[[ "$evt1_old" =~ .gz$ ]] && {
-    gzip -dc "$evt1_old" > "$evt1_old_tmp"
-} || {
-    \cp "$evt1_old" "$evt1_old_tmp"
+true && {
+    dtf1=$(get_dtf1 "$indir")
+    mtl1=$(get_mtl1 "$indir")
+    evt1_old=$(get_evt1 "$indir")
+    evt1_ssc="$outdir/${obsid}_evt1_ssc.fits"
+    flt1_ssc=${evt1_ssc/evt1/std_flt1}
+    dtf1_ssc=${evt1_ssc/evt1/dtf1}
+    PFILES=${PFILES}:${SCRIPTDIR}/patch_hrc_ssc/param
+    punlearn patch_hrc_ssc
+    $SCRIPTDIR/patch_hrc_ssc/bin/patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 2>&1 | tee $outdir/patch_hrc_ssc.out
+    evt1_old=$evt1_ssc
+    flt1=$flt1_ssc
+    dtf1=$dtf1_ssc
 }
-evt1_old="$evt1_old_tmp"
+
+#
+# if no SSC was detected, we either copy or unzip the archive evt1
+# to cwd
+#
+grep -q '^SSC not detected' $outdir/patch_hrc_ssc.out && {
+    evt1_old=$(get_evt1 "$indir")
+    evt1_old_tmp="$outdir/"$(basename "$evt1_old" | sed s/.gz$//).tmp
+    [[ "$evt1_old" =~ .gz$ ]] && {
+	gzip -dc "$evt1_old" > "$evt1_old_tmp"
+    } || {
+	\cp "$evt1_old" "$evt1_old_tmp"
+    }
+    evt1_old="$evt1_old_tmp"
+    flt1=$(get_flt1 "$indir")
+    dtf1=$(get_dtf1 "$indir")
+}
 
 #
 # Boresight correction to the aspect solution.
@@ -77,16 +95,18 @@ asp_offaxis_corr "$asol1" hrc
 dmhedit "$asol1" file="" op=add key=CONTENT value=ASPSOLOBI
 
 #
+# Ensure RANGELEV and WIDTHRES are correct
+#
+read rangelev widthres <<<$(rangelev_widthres_set "$evt1_old")
+
+#
 # Generate an observation parameter file containing the aspect
 # solution boresight correction information.
 #
 obs_par=${asol1/asol1.fits/obs.par}
 python "$SCRIPTDIR"/make_par "$evt1_old" "$asol1" "$obs_par"
-
-#
-# Ensure RANGELEV and WIDTHRES are correct
-#
-rangelev_widthres_set "$evt1_old"
+\echo range_switch_level,i,h,$rangelev',,,""' >> "$obs_par"
+\echo width_threshold,i,h,$widthres',,,""' >> "$obs_par"
 
 #
 # Create a new badpix file.
@@ -112,31 +132,28 @@ hrc_process_events \
     cl+
 r4_header_update "$evt1"
 
-
 #
-# Now create a new evt1 file with unrolled sky coordinates.
+# create a new evt1 file with unrolled sky coordinates.
 #
 evt1_deroll=${evt1/evt1/deroll_evt1}
 asol1_deroll=${asol1/asol/deroll_asol}
-[[ $(hostname) =~ (legs|milagro) ]] || {
-    #
-    # deroll_asol returns an error code when {ra,dec,roll}_nom
-    # keywords are absent frrm the asol1 file. This should not be fatal
-    # to the parent bash process if it was run with -e.
-    #
-    reset_e=0
-    [[ $- =~ e ]] && {
-	set +e
-	reset_e=1
-    }
-    #
-    # mst_envs modifies the path, so keep it isolated
-    #
-    bash -c '
-      . /proj/axaf/simul/etc/mst_envs.sh
-      /proj/axaf/simul/bin/deroll_asol --input '"$asol1"' --output '"$asol1_deroll"
-    [ $reset_e -eq 1 ] && set -e
+#
+# deroll_asol returns an error code when {ra,dec,roll}_nom
+# keywords are absent from the asol1 file. This should not be fatal
+# to the parent bash process if it was run with -e.
+#
+reset_e=0
+[[ $- =~ e ]] && {
+    set +e
+    reset_e=1
 }
+#
+# mst_envs modifies the path, so keep it isolated
+#
+bash -c '
+  . /proj/axaf/simul/etc/mst_envs.sh
+  /proj/axaf/simul/bin/deroll_asol --input '"$asol1"' --output '"$asol1_deroll"
+[ $reset_e -eq 1 ] && set -e
 
 dmhedit "$evt1_old" filelist=none operation=add key=RA_NOM value=0.0
 dmhedit "$evt1_old" filelist=none operation=add key=DEC_NOM value=0.0
@@ -144,6 +161,8 @@ dmhedit "$evt1_old" filelist=none operation=add key=ROLL_NOM value=0.0
 
 obs_par_deroll=${obs_par/obs/deroll_obs}
 python "$SCRIPTDIR"/make_par "$evt1_old" "$asol1_deroll" "$obs_par_deroll"
+\echo range_switch_level,i,h,$rangelev',,,""' >> "$obs_par_deroll"
+\echo width_threshold,i,h,$widthres',,,""' >> "$obs_par_deroll"
 
 pset "$obs_par_deroll" ra_nom=0
 pset "$obs_par_deroll" dec_nom=0
@@ -173,7 +192,7 @@ r4_header_update "$evt1_deroll"
 #
 # status bit filter
 #
-[[ $detnam =~ hrc-s* ]] && {
+[[ $detnam =~ hrc-s ]] && {
     filter='xxxxxx00xxxx0xxx0000x000x00000xx'
     order_list='-1,1,-2,2,-3,3'
 } || {
@@ -189,7 +208,6 @@ dmcopy "${evt1_deroll}[status=$filter]" "$flt_evt1_deroll" cl+
 #
 # GTI filter
 #
-flt1=$(get_flt1 "$indir")
 evt2=${evt1/evt1/evt2}
 dmcopy "$flt_evt1[events][@${flt1}]" "$evt2" cl+
 evt2_deroll=${evt1/evt1/deroll_evt2}
@@ -198,9 +216,10 @@ dmcopy "$flt_evt1_deroll[events][@${flt1}]" "$evt2_deroll" cl+
 #
 # correct LIVETIME, EXPOSURE, DTCOR
 #
-dtfstats=${evt1/evt1/dtfstats}
-dtf1=$(get_dtf1 "$indir")
-hrc_dtf_corr "$dtf1" "$evt2" "$dtfstats"
+true && {
+    dtfstats=${evt1/evt1/dtfstats}
+    hrc_dtf_corr "$dtf1" "$evt2" "$dtfstats"
+}
 
 #
 # Pull out unrolled sky coordinates. Columns must be reordered to
@@ -320,11 +339,12 @@ grating=$(pquery "$obs_par" grating)
 
     make_response
 
+    \mv "$evt2a" "$evt2"
+
     \rm -f \
 	"$evt2_coords" \
 	"$src2a" \
-	"$L2a" \
-	"$evt2"
+	"$L2a"
 } || {
     punlearn dmpaste
     dmpaste "${evt2}" "${evt2_deroll}.tmp[col x2,y2]" "${evt2}.tmp" cl+
@@ -334,7 +354,6 @@ grating=$(pquery "$obs_par" grating)
 
 \rm -f \
     "$evt1_old" \
-    "$asol1" \
     "$bpix1" \
     "$obs_par" \
     "$evt1" \

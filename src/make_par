@@ -15,7 +15,7 @@ def map_data_type(key):
     import numpy as np
 
     val = "{}".format(key.value)
-    if isinstance(key.value, (str, np.str)):
+    if isinstance(key.value, (str, )):
         dtype = "s"
         val = '"{}"'.format(val)
     elif isinstance(key.value, (int, np.integer)):
