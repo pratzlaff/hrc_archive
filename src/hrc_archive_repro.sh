@@ -59,7 +59,7 @@ true && {
     dtf1_ssc=${evt1_ssc/evt1/dtf1}
     PFILES=${PFILES}:${SCRIPTDIR}/patch_hrc_ssc/param
     punlearn patch_hrc_ssc
-    $SCRIPTDIR/patch_hrc_ssc/bin/patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 2>&1 | tee $outdir/patch_hrc_ssc.out
+    $SCRIPTDIR/patch_hrc_ssc/bin/patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 2>&1 | tee $outdir/patch_hrc_ssc.log
     evt1_old=$evt1_ssc
     flt1=$flt1_ssc
     dtf1=$dtf1_ssc
@@ -69,7 +69,7 @@ true && {
 # if no SSC was detected, we either copy or unzip the archive evt1
 # to cwd
 #
-grep -q '^SSC not detected' $outdir/patch_hrc_ssc.out && {
+grep -q '^SSC not detected' $outdir/patch_hrc_ssc.log && {
     evt1_old=$(get_evt1 "$indir")
     evt1_old_tmp="$outdir/"$(basename "$evt1_old" | sed s/.gz$//).tmp
     [[ "$evt1_old" =~ .gz$ ]] && {
@@ -363,6 +363,8 @@ grating=$(pquery "$obs_par" grating)
     "$flt_evt1_deroll" \
     "$evt2_deroll" \
     "${evt2_deroll}.tmp" \
+    "$dtf1_ssc" \
+    "$flt1_ssc" \
     "$dtfstats"
 #false && [[ $(hostname) =~ (legs|milagro) ]] || rm -f "$asol1_deroll"
 
