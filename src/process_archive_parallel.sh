@@ -1,12 +1,12 @@
 #! /bin/bash
 
 det=i
-n=16
+n=12
 
 set -e
 set -o pipefail
 
-script=/data/legs/rpete/flight/hrc_archive/process_archive.sh
+script=/data/legs/rpete/flight/hrc_archive/src/process_archive.sh
 
 sname=archive
 screen -dmS $sname
