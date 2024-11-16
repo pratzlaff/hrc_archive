@@ -1,17 +1,24 @@
 #! /bin/bash
 
+flt1_good()
+{
+    local flt1="$1"
+    dmstat "$flt1" 1>/dev/null 2>&1
+    pget dmstat out_good
+}
+
 asol_stack()
 {
     local dir="$1"
     #\ls "$dir"/pcadf*asol1.fits* | perl -le 'chomp(@f=<>); print join(",", @f)'
-    \ls -1 "$dir"/pcadf*asol1.fits* | \tr '\n' , | \sed 's/,$/\n/'
+    \ls -1 "$dir"/pcadf*asol1.fits* 2>/dev/null | \tr '\n' , | \sed 's/,$/\n/' || echo -n ''
 }
 
 get_type()
 {
     local dir="$1"
     local type="$2"
-    \ls "$dir/"*"${type}.fits"* | \tail -1
+    \ls "$dir/"*"${type}.fits"* 2>/dev/null | \tail -1 || echo -n ''
 }
 
 get_evt1()

@@ -38,6 +38,10 @@ punlearn ardlib
 # data product.
 #
 fov1=$(get_fov1 "$indir")
+[ -z "$fov1" ] && {
+  echo "FIXME: NO FOV1 FOUND IN '$indir/primary', exiting." 1>&2
+  exit
+}
 detnam=$(dmkeypar "$fov1" detnam ec+)
 obsid=$(printf %05d $(dmkeypar "$fov1" obs_id ec+))
 
@@ -46,6 +50,23 @@ obsid=$(printf %05d $(dmkeypar "$fov1" obs_id ec+))
   \echo "This script only handles HRC data." 1>&2
   exit 1
 }
+
+#
+# Boresight correction to the aspect solution.
+#
+asol1_stack=$(asol_stack "$indir/primary")
+[ -z "$asol1_stack" ] && {
+  echo "FIXME: NO PCAD FOUND IN '$indir/primary', exiting." 1>&2
+  exit
+}
+asol1="$outdir/${obsid}_asol1.fits"
+tstart=$(dmkeypar "$fov1" tstart ec+)
+tstop=$(dmkeypar "$fov1" tstop ec+)
+punlearn dmmerge
+dmmerge "$asol1_stack[time=${tstart}:${tstop}]" "$asol1" cl+
+asp_offaxis_corr "$asol1" hrc
+dmhedit "$asol1" file="" op=add key=CONTENT value=ASPSOLOBI
+
 
 #
 # patch_hrc_ssc
@@ -59,7 +80,7 @@ true && {
     dtf1_ssc=${evt1_ssc/evt1/dtf1}
     PFILES=${PFILES}:${SCRIPTDIR}/patch_hrc_ssc/param
     punlearn patch_hrc_ssc
-    $SCRIPTDIR/patch_hrc_ssc/bin/patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 2>&1 | tee $outdir/patch_hrc_ssc.log
+    $SCRIPTDIR/patch_hrc_ssc/bin/patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 cl+ 2>&1 | tee $outdir/patch_hrc_ssc.log
     evt1_old=$evt1_ssc
     flt1=$flt1_ssc
     dtf1=$dtf1_ssc
@@ -82,17 +103,11 @@ grep -q '^SSC not detected' $outdir/patch_hrc_ssc.log && {
     dtf1=$(get_dtf1 "$indir")
 }
 
-#
-# Boresight correction to the aspect solution.
-#
-asol1_stack=$(asol_stack "$indir/primary")
-asol1="$outdir/${obsid}_asol1.fits"
-tstart=$(dmkeypar "$fov1" tstart ec+)
-tstop=$(dmkeypar "$fov1" tstop ec+)
-punlearn dmmerge
-dmmerge "$asol1_stack[time=${tstart}:${tstop}]" "$asol1" cl+
-asp_offaxis_corr "$asol1" hrc
-dmhedit "$asol1" file="" op=add key=CONTENT value=ASPSOLOBI
+ngti=$(flt1_good "$flt1")
+[ "$ngti" -gt 0 ] || {
+  echo "FIXME: NO GTI FOUND IN '$flt1', exiting." 1>&2
+  exit
+}
 
 #
 # Ensure RANGELEV and WIDTHRES are correct
