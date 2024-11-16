@@ -1,6 +1,6 @@
 #! /bin/bash
 
-det=i
+det=s
 n=12
 
 set -e

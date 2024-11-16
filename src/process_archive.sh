@@ -34,8 +34,12 @@ outdir=/data/loss/rpete/hrc/$det
 obsids=$(echo $indir/[0-9][0-9][0-9][0-9][0-9] | perl -pnle "s|$indir/||g")
 
 obsids=$(i_of_n $i $n $obsids)
+nobsids=$(echo $obsids | wc -w)
+j=0
 for obsid in $obsids
 do
+  (( ++j ))
+  echo "********** Processing ObsID $obsid: $j of $nobsids **********" 1>&2
   mkdir -p $outdir/$obsid/analysis
   #echo $script $indir/$obsid $outdir/$obsid/analysis #2>&1 | tee $outdir/$obsid/analysis/hrc_archive_repro.log
   bash -x $script $indir/$obsid $outdir/$obsid/analysis 2>&1 | tee $outdir/$obsid/analysis/hrc_archive_repro.log
