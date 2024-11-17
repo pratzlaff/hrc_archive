@@ -193,8 +193,8 @@ gainfile_cases()
 {
     local obsid="$1"
 
-    local gainfile_hv1="${CALDB}"/data/chandra/hrc/t_gmap/hrcsD1999-07-22t_gmapN0003.fits
-    local gainfile_hv2="${CALDB}"/data/chandra/hrc/t_gmap/hrcsD2012-03-29t_gmapN0003.fits
+    local gainfile_hv1="${CALDB}"/data/chandra/hrc/t_gmap/hrcsD1999-07-22t_gmapN0004.fits
+    local gainfile_hv2="${CALDB}"/data/chandra/hrc/t_gmap/hrcsD2012-03-29t_gmapN0004.fits
 
     local hv1_obsids=( 14324 14396 14397 ) # taken 2012-07-04
     local hv2_obsids=( 14238 )             # taken 2012-03-18
