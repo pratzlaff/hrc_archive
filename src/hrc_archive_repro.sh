@@ -33,17 +33,13 @@ SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 . $SCRIPTDIR/hrc_archive_repro_functions.sh
 punlearn ardlib
 
-#
-# Use the fov1 file just because it seems to be the smallest available
-# data product.
-#
-fov1=$(get_fov1 "$indir")
-[ -z "$fov1" ] && {
-  echo "FIXME: NO FOV1 FOUND IN '$indir/primary', exiting." 1>&2
+dtf1=$(get_dtf1 "$indir")
+[ -z "$dtf1" ] && {
+  \echo "FIXME: NO DTF1 FOUND IN '$indir/primary', exiting." 1>&2
   exit
 }
-detnam=$(dmkeypar "$fov1" detnam ec+)
-obsid=$(printf %05d $(dmkeypar "$fov1" obs_id ec+))
+detnam=$(dmkeypar "$dtf1" detnam ec+)
+obsid=$(printf %05d $(dmkeypar "$dtf1" obs_id ec+))
 
 [[ $detnam =~ hrc-[is] ]] ||
 {
@@ -56,12 +52,12 @@ obsid=$(printf %05d $(dmkeypar "$fov1" obs_id ec+))
 #
 asol1_stack=$(asol_stack "$indir/primary")
 [ -z "$asol1_stack" ] && {
-  echo "FIXME: NO PCAD FOUND IN '$indir/primary', exiting." 1>&2
+  \echo "FIXME: NO PCAD FOUND IN '$indir/primary', exiting." 1>&2
   exit
 }
 asol1="$outdir/${obsid}_asol1.fits"
-tstart=$(dmkeypar "$fov1" tstart ec+)
-tstop=$(dmkeypar "$fov1" tstop ec+)
+tstart=$(dmkeypar "$dtf1" tstart ec+)
+tstop=$(dmkeypar "$dtf1" tstop ec+)
 punlearn dmmerge
 dmmerge "$asol1_stack[time=${tstart}:${tstop}]" "$asol1" cl+
 asp_offaxis_corr "$asol1" hrc
@@ -72,7 +68,6 @@ dmhedit "$asol1" file="" op=add key=CONTENT value=ASPSOLOBI
 # patch_hrc_ssc
 #
 true && {
-    dtf1=$(get_dtf1 "$indir")
     mtl1=$(get_mtl1 "$indir")
     evt1_old=$(get_evt1 "$indir")
     evt1_ssc="$outdir/${obsid}_evt1_ssc.fits"
@@ -80,7 +75,7 @@ true && {
     dtf1_ssc=${evt1_ssc/evt1/dtf1}
     PFILES=${PFILES}:${SCRIPTDIR}/patch_hrc_ssc/param
     punlearn patch_hrc_ssc
-    $SCRIPTDIR/patch_hrc_ssc/bin/patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 cl+ 2>&1 | tee $outdir/patch_hrc_ssc.log
+    $SCRIPTDIR/patch_hrc_ssc/bin/patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 cl+ 2>&1 | \tee $outdir/patch_hrc_ssc.log
     evt1_old=$evt1_ssc
     flt1=$flt1_ssc
     dtf1=$dtf1_ssc
@@ -90,9 +85,9 @@ true && {
 # if no SSC was detected, we either copy or unzip the archive evt1
 # to cwd
 #
-grep -q '^SSC not detected' $outdir/patch_hrc_ssc.log && {
+\grep -q '^SSC not detected' $outdir/patch_hrc_ssc.log && {
     evt1_old=$(get_evt1 "$indir")
-    evt1_old_tmp="$outdir/"$(basename "$evt1_old" | sed s/.gz$//).tmp
+    evt1_old_tmp="$outdir/"$(basename "$evt1_old" | \sed s/.gz$//).tmp
     [[ "$evt1_old" =~ .gz$ ]] && {
 	gzip -dc "$evt1_old" > "$evt1_old_tmp"
     } || {
@@ -105,7 +100,7 @@ grep -q '^SSC not detected' $outdir/patch_hrc_ssc.log && {
 
 ngti=$(flt1_good "$flt1")
 [ "$ngti" -gt 0 ] || {
-  echo "FIXME: NO GTI FOUND IN '$flt1', exiting." 1>&2
+  \echo "FIXME: NO GTI FOUND IN '$flt1', exiting." 1>&2
   exit
 }
 

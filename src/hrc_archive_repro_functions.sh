@@ -3,7 +3,7 @@
 flt1_good()
 {
     local flt1="$1"
-    dmstat "$flt1" 1>/dev/null 2>&1
+    dmstat "$flt1"'[gti][col start]' 1>/dev/null 2>&1
     pget dmstat out_good
 }
 
@@ -11,14 +11,14 @@ asol_stack()
 {
     local dir="$1"
     #\ls "$dir"/pcadf*asol1.fits* | perl -le 'chomp(@f=<>); print join(",", @f)'
-    \ls -1 "$dir"/pcadf*asol1.fits* 2>/dev/null | \tr '\n' , | \sed 's/,$/\n/' || echo -n ''
+    \ls -1 "$dir"/pcadf*asol1.fits* 2>/dev/null | \tr '\n' , | \sed 's/,$/\n/' || \echo -n ''
 }
 
 get_type()
 {
     local dir="$1"
     local type="$2"
-    \ls "$dir/"*"${type}.fits"* 2>/dev/null | \tail -1 || echo -n ''
+    \ls "$dir/"*"${type}.fits"* 2>/dev/null | \tail -1 || \echo -n ''
 }
 
 get_evt1()
@@ -59,9 +59,9 @@ hrc_dtf_corr()
 	gtifile="$evt[gti]" \
 	cl+
 
-    local dtcor=$(dmlist "$dtfstats[col dtcor]" data,raw | tail -1 | sed 's/ //g')
+    local dtcor=$(dmlist "$dtfstats[col dtcor]" data,raw | \tail -1 | \sed 's/ //g')
     local ontime=$(dmkeypar $evt ontime ec+)
-    local livetime=$(echo "$dtcor*$ontime" | bc -l)
+    local livetime=$(\echo "$dtcor*$ontime" | bc -l)
     dmhedit "$evt" filelist="" op=add key=livetime value="$livetime" 
     dmhedit "$evt" filelist="" op=add key=exposure value="$livetime"
     dmhedit "$evt" filelist="" op=add key=dtcor value="$dtcor"
@@ -82,13 +82,13 @@ rangelev_widthres_set()
 	case $detnam in
 	    hrc-i*) rangelev=115 ;;
 	    hrc-s*) rangelev=125 ;;
-	    *) echo "Unrecognized DETNAM='$detnam'" 1>&2; exit 1 ;;
+	    *) \echo "Unrecognized DETNAM='$detnam'" 1>&2; exit 1 ;;
 	esac
     }
     [ "$date_obs" \> 2000-10-05 ] && widthres=2
     dmhedit infile="$evt" filelist=none operation=add key=rangelev value=$rangelev
     dmhedit infile="$evt" filelist=none operation=add key=widthres value=$widthres
-    echo $rangelev $widthres
+    \echo $rangelev $widthres
 }
 
 make_response()
@@ -104,8 +104,8 @@ make_response()
     local rmffile
 
     local row=0
-    echo okay
-    dmlist "$pha2"'[cols tg_m, tg_part]' data,raw | grep -v '^#' | while read line
+    \echo okay
+    dmlist "$pha2"'[cols tg_m, tg_part]' data,raw | \grep -v '^#' | while read line
     do
 	(( row++ ))
         read tg_m tg_part <<<$(echo "$line")
@@ -113,7 +113,7 @@ make_response()
             1) grating_arm=HEG ;;
             2) grating_arm=MEG ;;
             3) grating_arm=LEG ;;
-            *) echo "make_rmfs() - unrecognized TG_PART=$tg_part in $pha2" 1>&2
+            *) \echo "make_rmfs() - unrecognized TG_PART=$tg_part in $pha2" 1>&2
                return 1 ;;
 	esac
 
@@ -175,7 +175,7 @@ repro_asol1()
     asp_offaxis_corr "$asol1" hrc
     dmhedit "$asol1" file="" op=add key=CONTENT value=ASPSOLOBI
 
-    echo "$asol1"
+    \echo "$asol1"
 }
 
 make_pcad_obs()
@@ -186,7 +186,7 @@ make_pcad_obs()
     local evt1=$(get_evt1 "$indir")
     local pcad_obs="$outdir/pcad_obs.par"
     python "$scriptdir"/make_par "$evt1" "$asol1" "$pcad_obs"
-    echo "$pcad_obs"
+    \echo "$pcad_obs"
 }
 
 gainfile_cases()
@@ -211,7 +211,7 @@ gainfile_cases()
 	[ $obsid -eq $o ] && gainfile="gainfile=${gainfile_hv2}"
     done
 
-    echo "$gainfile"
+    \echo "$gainfile"
 }
 
 run_hrc_process_events()
@@ -235,5 +235,5 @@ run_hrc_build_badpix()
     punlearn hrc_build_badpix
     hrc_build_badpix CALDB "$bpix1" "$obs_par" degapfile=CALDB cl+
 
-    echo $bpix1
+    \echo $bpix1
 }

@@ -16,14 +16,14 @@ pdir=`mktemp -d`
 
 # check if tmp dir was created
 if [[ ! "$pdir" || ! -d "$pdir" ]]; then
-    echo "Could not create temp dir"
+    \echo "Could not create temp dir"
     exit 1
 fi
 
 # deletes the temp directory
 function cleanup {      
-    rm -rf "$pdir"
-    echo "Deleted temp working directory $pdir" 1>&2
+    \rm -rf "$pdir"
+    \echo "Deleted temp working directory $pdir" 1>&2
 }
 
 # register the cleanup function to be called on the EXIT signal
