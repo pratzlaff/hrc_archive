@@ -10,14 +10,14 @@ set -o pipefail
   exit 1
 }
 
-det="$1"; det=${det,,}
-i="$2"
-n="$3"
+det=${1,,}
+i=$2
+n=$3
 
 case $det in
   i|s) ;;
     *) \echo "detector must be i or s" 1>&2
-       exit 1;
+       exit 1
        ;;
 esac
 

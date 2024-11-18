@@ -1,6 +1,11 @@
 #! /bin/bash
 
-det=s
+[ $# -eq 1 ] || {
+  \echo "Usage: i|s" 1>&2
+  exit 1
+}
+
+det=${1,,}
 n=12
 
 set -e
