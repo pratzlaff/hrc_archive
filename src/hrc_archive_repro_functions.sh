@@ -134,8 +134,9 @@ make_response()
 	# end up with m1,p1,m2,p2,m3,p3,etc
 	local ostr=p$tg_m
 	[ $tg_m -lt 0 ] && ostr=m$(( -$tg_m ))
-	local rmfin="$rmfdir/rmf_${detstr}_${grating_arm,,}_${ostr}.fits"
-	local rmfout="$outdir/${obsid}_rmf_${grating_arm,,}_${ostr}.fits"
+	local rmfin="$rmfdir/${detstr}_${grating_arm,,}_${ostr}.rmf"
+	local rmfout="$outdir/tg/hrcf${obsid}_${grating_arm,,}_${ostr}.rmf"
+	mkdir -p "$outdir/tg"
 	\ln -fs "$rmfin" "$rmfout"
 
 	false && {
@@ -168,8 +169,9 @@ make_response()
             "$outdir/fullgarf/${obsid}_" \
             maskfile=NONE \
             clobber=yes
+	local arfout="$outdir/tg/hrcf${obsid}_${grating_arm,,}_${ostr}.arf"
 	\mv "$outdir/fullgarf/${obsid}_${grating_arm}_${tg_m}_garf.fits" \
-	   "$outdir/${obsid}_arf_${grating_arm,,}_${ostr}.fits"
+	   "$arfout"
     done
     \rm -rf "$outdir/fullgarf"
 }

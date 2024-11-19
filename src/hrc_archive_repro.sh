@@ -12,12 +12,6 @@ set -o pipefail
 obsid=$(sed 's/^0*//' <<< "$1")
 outdir="$2"
 
-mkdir -p "$outdir"
-cd "$outdir"
-
-# delete whatever is there for this obsid to start anew
-rm -rf {i,s}/$(printf %05d $obsid)
-
 . ~/.bash_aliases
 shopt -s expand_aliases nocasematch
 
@@ -38,6 +32,11 @@ SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 . $SCRIPTDIR/hrc_archive_repro_functions.sh
 
 punlearn ardlib
+
+mkdir -p "$outdir"
+cd "$outdir"
+# delete whatever is there for this obsid to start anew
+rm -rf {i,s}/$(printf %05d $obsid)
 
 indir="$outdir/$obsid"
 
@@ -78,7 +77,7 @@ asol1_stack=$(asol_stack "$indir")
   \echo "FIXME: NO PCAD FOUND IN '$indir/primary', exiting." 1>&2
   exit
 }
-asol1="$outdir/${obsid}_asol1.fits"
+asol1="$outdir/hrcf${obsid}_asol1.fits"
 tstart=$(dmkeypar "$dtf1" tstart ec+)
 tstop=$(dmkeypar "$dtf1" tstop ec+)
 punlearn dmmerge
@@ -93,7 +92,7 @@ dmhedit "$asol1" file="" op=add key=CONTENT value=ASPSOLOBI
 true && {
     mtl1=$(get_mtl1 "$indir")
     evt1_old=$(get_evt1 "$indir")
-    evt1_ssc="$outdir/${obsid}_evt1_ssc.fits"
+    evt1_ssc="$outdir/hrcf${obsid}_evt1_ssc.fits"
     flt1_ssc=${evt1_ssc/evt1/std_flt1}
     dtf1_ssc=${evt1_ssc/evt1/dtf1}
     PFILES=${PFILES}:${SCRIPTDIR}/patch_hrc_ssc/param
@@ -137,7 +136,10 @@ read rangelev widthres <<<$(rangelev_widthres_set "$evt1_old")
 # solution boresight correction information.
 #
 obs_par=${asol1/asol1.fits/obs.par}
-python "$SCRIPTDIR"/make_par "$evt1_old" "$asol1" "$obs_par"
+python "$SCRIPTDIR"/make_par "$evt1_old" "$asol1" "$obs_par" || {
+  \echo "FIXME: $SCRIPTDIR/make_par $evt1_old $asol1 $obs_par failed, exiting." 1>&2
+  exit
+}
 \echo range_switch_level,i,h,$rangelev',,,""' >> "$obs_par"
 \echo width_threshold,i,h,$widthres',,,""' >> "$obs_par"
 
@@ -193,7 +195,10 @@ dmhedit "$evt1_old" filelist=none operation=add key=DEC_NOM value=0.0
 dmhedit "$evt1_old" filelist=none operation=add key=ROLL_NOM value=0.0
 
 obs_par_deroll=${obs_par/obs/deroll_obs}
-python "$SCRIPTDIR"/make_par "$evt1_old" "$asol1_deroll" "$obs_par_deroll"
+python "$SCRIPTDIR"/make_par "$evt1_old" "$asol1_deroll" "$obs_par_deroll" || {
+  \echo "FIXME: $SCRIPTDIR/make_par $evt1_old $asol1_deroll $obs_par_deroll failed, exiting." 1>&2
+  exit
+}
 \echo range_switch_level,i,h,$rangelev',,,""' >> "$obs_par_deroll"
 \echo width_threshold,i,h,$widthres',,,""' >> "$obs_par_deroll"
 
@@ -252,7 +257,6 @@ dmcopy "$flt_evt1_deroll[events][@${flt1}]" "$evt2_deroll" cl+
 true && {
     dtfstats=${evt1/evt1/dtfstats}
     hrc_dtf_corr "$dtf1" "$dtfstats" "$flt1" "$evt2"
-    hrc_dtf_corr "$dtf1" "$dtfstats" "$flt1" "$evt2_deroll"
 }
 
 #
@@ -343,7 +347,7 @@ grating=$(pquery "$obs_par" grating)
     #
     # (tg_mlam, pi) filter
     #
-    [[ $detnam =~ hrc-s ]] && {
+    [[ $detnam =~ hrc-s ]] && false && {
 	pireg=$(calquiz infile="$evt2a" product=tgpimask2 calfile=CALDB echo+)
 	[ -z "$pireg" ] || {
 	    dmcopy "$evt2a[events][(tg_mlam,pi)=region(${pireg})]" "$evt2a".tmp cl+
