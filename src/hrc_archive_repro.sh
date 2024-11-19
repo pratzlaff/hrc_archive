@@ -36,36 +36,54 @@ punlearn ardlib
 mkdir -p "$outdir"
 cd "$outdir"
 # delete whatever is there for this obsid to start anew
-rm -rf {i,s}/$(printf %05d $obsid)
-
-indir="$outdir/$obsid"
+rm -rf {i,s}/$(printf %05d $obsid) "$obsid"
 
 files=evt1,flt,asol,dtf,mtl
 download_chandra_obsid $obsid $files
 
-dtf1=$(get_dtf1 "$obsid")
+subdet=
+
+[ -d $obsid ] && {
+  indir=$obsid
+} || {
+  for s in i s
+  do
+    subdet=$s
+    d="/data/hrc/$subdet/$(printf %05d $obsid)"
+    [ -d "$d" ] && {
+      outdir="$subdet/$(printf %05d $obsid)/analysis"
+      \mkdir -p "$outdir"
+      indir="$d"
+      \echo "FIXME: download_chandra_obsid $obsid failed, using '$indir'" 1>&2
+      continue
+    }
+  done
+}
+
+dtf1=$(get_dtf1 "$indir")
 [ -z "$dtf1" ] && {
-  \echo "FIXME: NO DTF1 FOUND IN '$indir/primary', exiting." 1>&2
-  #\rm "$indir
+  dname=$indir/primary
+  [ -z "$subdet" ] && dname=$outdir/$obsid/primary
+  \echo "FIXME: NO DTF1 FOUND IN '$dname', exiting." 1>&2
   exit
 }
 detnam=$(dmkeypar "$dtf1" detnam ec+)
-obsid_new=$(printf %05d "$obsid")
 
-case "$detnam" in
-  hrc-i) outdir=./i ;;
-  hrc-s) outdir=./s ;;
-      *) \echo "This script only handles HRC data." 1>&2
-         exit 1
-esac
+[ -z "$subdet" ] && {
+  case "$detnam" in
+    hrc-i) subdet=i ;;
+    hrc-s) subdet=s ;;
+        *) \echo "This script only handles HRC data." 1>&2
+           exit 1
+  esac
+  \mkdir -p ./$subdet
+  obsid_new=$(printf %05d "$obsid")
+  \mv $obsid ./$subdet/$obsid_new
+  obsid=$obsid_new
+  indir=./$subdet/$obsid
+  outdir=./$subdet/$obsid/analysis
+}
 
-\mkdir -p "$outdir"
-outdir="$outdir/${obsid_new}"
-\mv "$obsid"  "$outdir"
-obsid="$obsid_new"
-indir="$outdir"
-
-outdir="$outdir/analysis"
 \mkdir -p "$outdir"
 
 #
