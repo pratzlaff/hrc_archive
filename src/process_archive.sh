@@ -19,7 +19,7 @@ n=$2
 }
 
 script=/data/legs/rpete/flight/hrc_archive/src/hrc_archive_repro.sh
-outdir=/data/loss/rpete/hrc2
+outdir=/data/loss/rpete/hrc
 logdir="$outdir/logs"
 mkdir -p "$logdir"
 

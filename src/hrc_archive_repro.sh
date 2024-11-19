@@ -48,9 +48,9 @@ subdet=
 } || {
   for s in i s
   do
-    subdet=$s
     d="/data/hrc/$subdet/$(printf %05d $obsid)"
     [ -d "$d" ] && {
+      subdet=$s
       outdir="$subdet/$(printf %05d $obsid)/analysis"
       \mkdir -p "$outdir"
       indir="$d"
@@ -58,6 +58,10 @@ subdet=
       continue
     }
   done
+  [ -z "$subdet"] && {
+    \echo "FIXME: download_chandra_obsid $obsid failed and nothing found in /data/hrc" 1>&2
+    exit
+  }
 }
 
 dtf1=$(get_dtf1 "$indir")
