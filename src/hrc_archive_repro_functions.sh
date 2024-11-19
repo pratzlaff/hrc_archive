@@ -9,9 +9,14 @@ flt1_good()
 
 asol_stack()
 {
-    local dir="$1"
-    #\ls "$dir"/pcadf*asol1.fits* | perl -le 'chomp(@f=<>); print join(",", @f)'
-    \ls -1 "$dir"/pcadf*asol1.fits* 2>/dev/null | \tr '\n' , | \sed 's/,$/\n/' || \echo -n ''
+    #\ls "$1"/primary/pcadf*asol1.fits* | perl -le 'chomp(@f=<>); print join(",", @f)'
+    \ls -1 "$1"/primary/pcadf*asol1.fits* 2>/dev/null | \tr '\n' , | \sed 's/,$/\n/' || \echo -n ''
+}
+
+osol_stack()
+{
+    #\ls "$1"/secondary/aspect/pcadf*osol1.fits* | perl -le 'chomp(@f=<>); print join(",", @f)'
+    \ls -1 "$1"/secondary/aspect/pcadf*osol1.fits* 2>/dev/null | \tr '\n' , | \sed 's/,$/\n/' || \echo -n ''
 }
 
 get_type()
@@ -49,14 +54,15 @@ get_fov1()
 hrc_dtf_corr()
 {
     local dtf1="$1"
-    local evt="$2"
-    local dtfstats="$3"
+    local dtfstats="$2"
+    local flt1="$3"
+    local evt="$4"
 
     punlearn hrc_dtfstats
     hrc_dtfstats \
 	infile="$dtf1" \
 	outfile="$dtfstats" \
-	gtifile="$evt[gti]" \
+	gtifile="$flt1[filter]" \
 	cl+
 
     local dtcor=$(dmlist "$dtfstats[col dtcor]" data,raw | \tail -1 | \sed 's/ //g')
@@ -93,9 +99,15 @@ rangelev_widthres_set()
 
 make_response()
 {
+    rmfdir=/data/loss/rpete/hrc/rmfs
+
     case "$detnam" in
-	hrc-i*) detsubsys=HRC-I ;;
-	hrc-s*) detsubsys=HRC-S2 ;;
+        hrc-i*) detsubsys=HRC-I
+                detstr=hrci
+                ;;
+        hrc-s*) detsubsys=HRC-S2
+                detstr=hrcs
+                ;;
     esac
 
     local tg_m
@@ -109,12 +121,12 @@ make_response()
     do
 	(( row++ ))
         read tg_m tg_part <<<$(echo "$line")
-        case "$tg_part" in
-            1) grating_arm=HEG ;;
-            2) grating_arm=MEG ;;
-            3) grating_arm=LEG ;;
-            *) \echo "make_rmfs() - unrecognized TG_PART=$tg_part in $pha2" 1>&2
-               return 1 ;;
+	case "$tg_part" in
+	    1) grating_arm=HEG ;;
+	    2) grating_arm=MEG ;;
+	    3) grating_arm=LEG ;;
+	    *) \echo "make_rmfs() - unrecognized TG_PART=$tg_part in $pha2" 1>&2
+	       return 1 ;;
 	esac
 
 	[ $grating_arm = LEG ] || detsubsys=ACIS-S3
@@ -122,13 +134,16 @@ make_response()
 	# end up with m1,p1,m2,p2,m3,p3,etc
 	local ostr=p$tg_m
 	[ $tg_m -lt 0 ] && ostr=m$(( -$tg_m ))
-	local rmf="$outdir/${obsid}_rmf_${grating_arm,,}_${ostr}.fits"
+	local rmfin="$rmfdir/rmf_${detstr}_${grating_arm,,}_${ostr}.fits"
+	local rmfout="$outdir/${obsid}_rmf_${grating_arm,,}_${ostr}.fits"
+	\ln -fs "$rmfin" "$rmfout"
 
+	false && {
 	punlearn mkgrmf
 	mkgrmf \
             grating_arm="$grating_arm" \
             order="$tg_m" \
-            outfile="$rmf" \
+            outfile="$rmfout" \
             srcid=1 \
             detsubsys=$detsubsys \
             threshold=1e-06 \
@@ -137,6 +152,7 @@ make_response()
             wvgrid_arf=compute \
             wvgrid_chan=compute \
             clobber=yes
+	}
 
 	punlearn mkgarf
 	punlearn fullgarf
@@ -146,7 +162,7 @@ make_response()
             "$row" \
             "$evt2a" \
             "$asol1" \
-            "grid($rmf[cols ENERG_LO,ENERG_HI])" \
+            "grid($rmfout[cols ENERG_LO,ENERG_HI])" \
             "$dtf1" \
             "$bpix1" \
             "$outdir/fullgarf/${obsid}_" \

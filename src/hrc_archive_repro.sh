@@ -4,14 +4,19 @@ set -e
 set -o pipefail
 
 [ $# -eq 2 ] || {
-    \echo "Usage: $0 indir outdir" 2>&1
+    \echo "Usage: $0 obsid outdir" 2>&1
     exit 1
 }
 
-indir="$1"
+# have to remove leading 0s for download_chandra_obsid to work
+obsid=$(sed 's/^0*//' <<< "$1")
 outdir="$2"
 
 mkdir -p "$outdir"
+cd "$outdir"
+
+# delete whatever is there for this obsid to start anew
+rm -rf {i,s}/$(printf %05d $obsid)
 
 . ~/.bash_aliases
 shopt -s expand_aliases nocasematch
@@ -31,26 +36,44 @@ SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 . $SCRIPTDIR/tmppdir.sh
 . $SCRIPTDIR/hrc_archive_repro_functions.sh
+
 punlearn ardlib
 
-dtf1=$(get_dtf1 "$indir")
+indir="$outdir/$obsid"
+
+files=evt1,flt,asol,dtf,mtl
+download_chandra_obsid $obsid $files
+
+dtf1=$(get_dtf1 "$obsid")
 [ -z "$dtf1" ] && {
   \echo "FIXME: NO DTF1 FOUND IN '$indir/primary', exiting." 1>&2
+  #\rm "$indir
   exit
 }
 detnam=$(dmkeypar "$dtf1" detnam ec+)
-obsid=$(printf %05d $(dmkeypar "$dtf1" obs_id ec+))
+obsid_new=$(printf %05d "$obsid")
 
-[[ $detnam =~ hrc-[is] ]] ||
-{
-  \echo "This script only handles HRC data." 1>&2
-  exit 1
-}
+case "$detnam" in
+  hrc-i) outdir=./i ;;
+  hrc-s) outdir=./s ;;
+      *) \echo "This script only handles HRC data." 1>&2
+         exit 1
+esac
+
+\mkdir -p "$outdir"
+outdir="$outdir/${obsid_new}"
+\mv "$obsid"  "$outdir"
+obsid="$obsid_new"
+indir="$outdir"
+
+outdir="$outdir/analysis"
+\mkdir -p "$outdir"
 
 #
 # Boresight correction to the aspect solution.
 #
-asol1_stack=$(asol_stack "$indir/primary")
+dtf1=$(get_dtf1 "$indir")
+asol1_stack=$(asol_stack "$indir")
 [ -z "$asol1_stack" ] && {
   \echo "FIXME: NO PCAD FOUND IN '$indir/primary', exiting." 1>&2
   exit
@@ -98,11 +121,11 @@ true && {
     dtf1=$(get_dtf1 "$indir")
 }
 
-ngti=$(flt1_good "$flt1")
-[ "$ngti" -gt 0 ] || {
-  \echo "FIXME: NO GTI FOUND IN '$flt1', exiting." 1>&2
-  exit
-}
+#ngti=$(flt1_good "$flt1")
+#[ "$ngti" -gt 0 ] || {
+  #\echo "FIXME: NO GTI FOUND IN '$flt1', exiting." 1>&2
+  #exit
+#}
 
 #
 # Ensure RANGELEV and WIDTHRES are correct
@@ -228,7 +251,8 @@ dmcopy "$flt_evt1_deroll[events][@${flt1}]" "$evt2_deroll" cl+
 #
 true && {
     dtfstats=${evt1/evt1/dtfstats}
-    hrc_dtf_corr "$dtf1" "$evt2" "$dtfstats"
+    hrc_dtf_corr "$dtf1" "$dtfstats" "$flt1" "$evt2"
+    hrc_dtf_corr "$dtf1" "$dtfstats" "$flt1" "$evt2_deroll"
 }
 
 #

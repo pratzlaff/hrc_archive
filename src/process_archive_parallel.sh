@@ -1,11 +1,10 @@
 #! /bin/bash
 
-[ $# -eq 1 ] || {
-  \echo "Usage: i|s" 1>&2
+[ $# -eq 0 ] || {
+  \echo "Usage: $0" 1>&2
   exit 1
 }
 
-det=${1,,}
 n=12
 
 set -e
@@ -17,7 +16,7 @@ sname=archive
 screen -dmS $sname
 for i in $(seq $n)
 do
-  screen -S $sname -X screen bash -c "time $script $det $i $n; exec bash;"
+  screen -S $sname -X screen bash -c "time $script $i $n; exec bash;"
 done
 screen -S $sname -p0 -X kill
 screen -rS $sname 
