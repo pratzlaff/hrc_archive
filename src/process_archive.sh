@@ -19,8 +19,8 @@ n=$2
 }
 
 script=/data/legs/rpete/flight/hrc_archive/src/hrc_archive_repro.sh
-outdir=/data/loss/rpete/hrc
-logdir="$outdir/logs"
+outdir=/data/loss/rpete/hrc2
+logdir="$outdir/incomplete"
 mkdir -p "$logdir"
 
 . /data/legs/rpete/flight/analysis_functions/util.bash
@@ -37,7 +37,7 @@ do
   #echo "$script $indir/$obsid $outdir/$obsid/analysis 2>&1 | \tee $outdir/$obsid/analysis/hrc_archive_repro.log"
   bash -x $script $obsid $outdir 2>&1 | \tee "$logdir/hrc_archive_repro.log.$obsid"
 
-  # in cases where there was not data downloaded, there won't be [is]/$obsida directory
+  # in cases where there was not data downloaded, there won't be [is]/$obsid directory
   for subdet in i s
   do
     testdir="$outdir/$subdet/$obsid"

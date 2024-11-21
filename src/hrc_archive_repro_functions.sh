@@ -1,5 +1,46 @@
 #! /bin/bash
 
+download_data()
+{
+    [ $# -eq 2 ] || {
+	echo "Usage: $0 obsid outdir" 1>&2
+	exit 1
+    }
+    local obsid="$1"
+    local outdir="$2"
+
+    \mkdir -p "$outdir"/{primary,secondary,hk}
+    \cd "$outdir"
+
+    /proj/axaf/simul/bin/arc5gl -stdin <<EOP #1>/dev/null
+dataset=flight
+operation=retrieve
+detector=hrc
+obsid=$obsid
+level=0.5
+filetype=hrcss0_5
+go
+level=0
+filetype=hrcss
+go
+level=0
+filetype=evt0
+go
+filetype=hrc4eng
+subdetector=eng
+go
+retrieve asp1[pcadf$obsid*asol1*]
+retrieve hrc1
+EOP
+
+    \mv *_{dtf,fov,asol}1.fits* primary
+    \mv *_{bpix,evt,msk,mtl,std_flt,std_dtfstat}1.fits* secondary
+    \mv *_{4_eng,evt,ss}0.fits* *_ss0a.fits* hk
+
+    \cd -
+    ls $outdir/secondary/*evt1.fits* 1>/dev/null 2>&1
+}
+
 flt1_good()
 {
     local flt1="$1"

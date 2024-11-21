@@ -8,9 +8,20 @@ set -o pipefail
     exit 1
 }
 
-# have to remove leading 0s for download_chandra_obsid to work
-obsid=$(sed 's/^0*//' <<< "$1")
+obsid=$(printf %05d $(sed 's/^0*//' <<< "$1"))
 outdir="$2"
+
+SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
+. $SCRIPTDIR/tmppdir.sh
+. $SCRIPTDIR/hrc_archive_repro_functions.sh
+
+\rm -rf "$outdir/incomplete/$obsid"
+mkdir -p "$outdir/incomplete/$obsid"
+download_data $obsid "$outdir/incomplete/$obsid" || {
+    echo "FIXME: download_data $obsid '$outdir/incomplete/$obsid' failed, exiting." 1>&2
+    exit
+}
 
 . ~/.bash_aliases
 shopt -s expand_aliases nocasematch
@@ -26,68 +37,27 @@ reset_u=0
 ciao
 [ $reset_u -eq 1 ] && set -u
 
-SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
-
-. $SCRIPTDIR/tmppdir.sh
-. $SCRIPTDIR/hrc_archive_repro_functions.sh
-
 punlearn ardlib
 
-mkdir -p "$outdir"
-cd "$outdir"
-# delete whatever is there for this obsid to start anew
-rm -rf {i,s}/$(printf %05d $obsid) "$obsid"
-
-files=evt1,flt,asol,dtf,mtl
-download_chandra_obsid $obsid $files
-
-subdet=
-
-[ -d $obsid ] && {
-  indir=$obsid
-} || {
-  for s in i s
-  do
-    d="/data/hrc/$subdet/$(printf %05d $obsid)"
-    [ -d "$d" ] && {
-      subdet=$s
-      outdir="$subdet/$(printf %05d $obsid)/analysis"
-      \mkdir -p "$outdir"
-      indir="$d"
-      \echo "FIXME: download_chandra_obsid $obsid failed, using '$indir'" 1>&2
-      continue
-    }
-  done
-  [ -z "$subdet"] && {
-    \echo "FIXME: download_chandra_obsid $obsid failed and nothing found in /data/hrc" 1>&2
-    exit
-  }
-}
-
-dtf1=$(get_dtf1 "$indir")
+dtf1=$(get_dtf1 "$outdir/incomplete/$obsid")
 [ -z "$dtf1" ] && {
-  dname=$indir/primary
-  [ -z "$subdet" ] && dname=$outdir/$obsid/primary
   \echo "FIXME: NO DTF1 FOUND IN '$dname', exiting." 1>&2
   exit
 }
 detnam=$(dmkeypar "$dtf1" detnam ec+)
 
-[ -z "$subdet" ] && {
-  case "$detnam" in
+case "$detnam" in
     hrc-i) subdet=i ;;
     hrc-s) subdet=s ;;
-        *) \echo "This script only handles HRC data." 1>&2
-           exit 1
-  esac
-  \mkdir -p ./$subdet
-  obsid_new=$(printf %05d "$obsid")
-  \mv $obsid ./$subdet/$obsid_new
-  obsid=$obsid_new
-  indir=./$subdet/$obsid
-  outdir=./$subdet/$obsid/analysis
-}
+    *) \echo "This script only handles HRC data." 1>&2
+       exit 1
+esac
+\mkdir -p "$outdir/$subdet"
+\rm -rf "$outdir/$subdet/$obsid"
+\mv "$outdir/incomplete/$obsid" "$outdir/$subdet"
 
+indir="$outdir/$subdet/$obsid"
+outdir="$outdir/$subdet/$obsid/analysis"
 \mkdir -p "$outdir"
 
 #
