@@ -248,7 +248,10 @@ dmcopy "$flt_evt1_deroll[events][@${flt1}]" "$evt2_deroll" cl+
 #
 true && {
     dtfstats=${evt1/evt1/dtfstats}
-    hrc_dtf_corr "$dtf1" "$dtfstats" "$flt1" "$evt2"
+    hrc_dtf_corr "$dtf1" "$dtfstats" "$flt1" "$evt2" || {
+	echo "FIXME: hrc_dtf_corr failed, exiting." 1>&2
+	exit
+    }
 }
 
 #
