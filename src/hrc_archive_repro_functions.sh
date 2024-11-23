@@ -29,9 +29,15 @@ go
 filetype=hrc4eng
 subdetector=eng
 go
-retrieve asp1[pcadf$obsid*asol1*]
+retrieve asp1[pcadf*asol1.fits*]
 retrieve hrc1
 EOP
+
+    # if arc5gl gives both obsid-named files, delete those that are
+    # timestamp-named (this seems to be what download_chandra_obsid does)
+    ls pcadf*asol1.fits* | grep -q pcadf${obsid}_ && rm -f $(ls pcadf*asol1.fits* |  grep -v pcadf${obsid}_)
+
+    rm -f *aoff* *soff*
 
     \mv *_{dtf,fov,asol}1.fits* primary
     \mv *_{bpix,evt,msk,mtl,std_flt,std_dtfstat}1.fits* secondary
