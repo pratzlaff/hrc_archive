@@ -24,6 +24,7 @@ logdir="$outdir/incomplete"
 mkdir -p "$logdir"
 
 . /data/legs/rpete/flight/analysis_functions/util.bash
+. ~/python3_venv/bin/activate
 obsids=$(python3 /data/legs/rpete/flight/hrc_archive/src/obsids.py)
 
 obsids=$(i_of_n $i $n $obsids)
