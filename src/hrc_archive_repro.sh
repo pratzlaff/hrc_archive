@@ -87,9 +87,10 @@ true && {
     evt1_ssc="$outdir/hrcf${obsid}_evt1_ssc.fits"
     flt1_ssc=${evt1_ssc/evt1/std_flt1}
     dtf1_ssc=${evt1_ssc/evt1/dtf1}
-    PFILES=${PFILES}:${SCRIPTDIR}/patch_hrc_ssc/param
+    #PFILES=${PFILES}:${SCRIPTDIR}/patch_hrc_ssc/param
     punlearn patch_hrc_ssc
-    $SCRIPTDIR/patch_hrc_ssc/bin/patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 cl+ 2>&1 | \tee $outdir/patch_hrc_ssc.log
+    #$SCRIPTDIR/patch_hrc_ssc/bin/patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 cl+ 2>&1 | \tee $outdir/patch_hrc_ssc.log
+    patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 cl+ 2>&1 | \tee $outdir/patch_hrc_ssc.log
     evt1_old=$evt1_ssc
     flt1=$flt1_ssc
     dtf1=$dtf1_ssc

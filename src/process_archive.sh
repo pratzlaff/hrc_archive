@@ -5,16 +5,17 @@
 set -e
 set -o pipefail
 
-[ $# -eq 2 ] || {
-  \echo "Usage: i n" 1>&2
+[ $# -eq 3 ] || {
+  \echo "Usage: obsid_file i n" 1>&2
   exit 1
 }
 
-i=$1
-n=$2
+ofile="$1"
+i=$2
+n=$3
 
 [ $i -le $n ] || {
-  \echo "i must be than or equal to n" 1>&2
+  \echo "i must be less than or equal to n" 1>&2
   exit 1
 }
 
@@ -25,7 +26,7 @@ mkdir -p "$logdir"
 
 . /data/legs/rpete/flight/analysis_functions/util.bash
 . ~/python3_venv/bin/activate
-obsids=$(python3 /data/legs/rpete/flight/hrc_archive/src/obsids.py)
+obsids=$(cat "$ofile")
 
 obsids=$(i_of_n $i $n $obsids)
 nobsids=$(\echo $obsids | wc -w)
