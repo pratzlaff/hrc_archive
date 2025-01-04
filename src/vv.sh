@@ -35,17 +35,16 @@ do
     done
 
     [ -z "$subdet" ] && {
-	echo "FIXME: '$outdir/[is]/$obsid' not found." 1>&2
+	\echo "FIXME: '$outdir/[is]/$obsid' not found." 1>&2
 	continue
     }
 
     cd "$outdir/$subdet"
 
     obsid_dl=$(sed s/^0*// <<< $obsid)
-    [ "$obsid_dl" != "$obsid" ] && ln -fs "./$obsid" "$outdir/$subdet/${obsid_dl}"
+    [ "$obsid_dl" != "$obsid" ] && \ln -fs "./$obsid" "$outdir/$subdet/${obsid_dl}"
     download_chandra_obsid "${obsid_dl}" vv,vvref
-    [ "$obsid_dl" != "$obsid" ] && rm -f "$outdir/$subdet/${obsid_dl}"
+    [ "$obsid_dl" != "$obsid" ] && \rm -f "$outdir/$subdet/${obsid_dl}"
     cd -
     
 done
-
