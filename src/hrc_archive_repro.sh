@@ -13,7 +13,6 @@ outdir="$2"
 
 SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-. $SCRIPTDIR/tmppdir.sh
 . $SCRIPTDIR/hrc_archive_repro_functions.sh
 
 \rm -rf "$outdir/incomplete/$obsid"
@@ -36,6 +35,8 @@ reset_u=0
 }
 ciao
 [ $reset_u -eq 1 ] && set -u
+
+. $SCRIPTDIR/tmppdir.sh
 
 punlearn ardlib
 
@@ -81,16 +82,14 @@ dmhedit "$asol1" file="" op=add key=CONTENT value=ASPSOLOBI
 #
 # patch_hrc_ssc
 #
-true && {
+false && {
     mtl1=$(get_mtl1 "$indir")
     evt1_old=$(get_evt1 "$indir")
     evt1_ssc="$outdir/hrcf${obsid}_evt1_ssc.fits"
     flt1_ssc=${evt1_ssc/evt1/std_flt1}
     dtf1_ssc=${evt1_ssc/evt1/dtf1}
-    #PFILES=${PFILES}:${SCRIPTDIR}/patch_hrc_ssc/param
     punlearn patch_hrc_ssc
-    #$SCRIPTDIR/patch_hrc_ssc/bin/patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 cl+ 2>&1 | \tee $outdir/patch_hrc_ssc.log
-    patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 cl+ 2>&1 | \tee $outdir/patch_hrc_ssc.log
+    patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 100000 cl+ 2>&1 | \tee $outdir/patch_hrc_ssc.log
     evt1_old=$evt1_ssc
     flt1=$flt1_ssc
     dtf1=$dtf1_ssc
@@ -100,7 +99,7 @@ true && {
 # if no SSC was detected, we either copy or unzip the archive evt1
 # to cwd
 #
-\grep -q '^SSC not detected' $outdir/patch_hrc_ssc.log && {
+[ ! -f $outdir/patch_hrc_ssc.log ] || \grep -q '^SSC not detected' $outdir/patch_hrc_ssc.log && {
     evt1_old=$(get_evt1 "$indir")
     evt1_old_tmp="$outdir/"$(basename "$evt1_old" | \sed s/.gz$//).tmp
     [[ "$evt1_old" =~ .gz$ ]] && {
