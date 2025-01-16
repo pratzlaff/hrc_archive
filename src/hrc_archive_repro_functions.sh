@@ -3,7 +3,7 @@
 download_data()
 {
     [ $# -eq 2 ] || {
-	echo "Usage: $0 obsid outdir" 1>&2
+	\echo "Usage: $0 obsid outdir" 1>&2
 	exit 1
     }
     local obsid="$1"
@@ -146,7 +146,8 @@ rangelev_widthres_set()
 
 make_response()
 {
-    rmfdir=/data/loss/rpete/hrc/rmfs
+    local evt2="$evt2a"
+    local rmfdir=/data/loss/rpete/hrc/rmfs
 
     case "$detnam" in
         hrc-i*) detsubsys=HRC-I
@@ -163,7 +164,6 @@ make_response()
     local rmffile
 
     local row=0
-    \echo okay
     dmlist "$pha2"'[cols tg_m, tg_part]' data,raw | \grep -v '^#' | while read line
     do
 	(( row++ ))
@@ -205,10 +205,10 @@ make_response()
 	punlearn mkgarf
 	punlearn fullgarf
 	\mkdir -p "$outdir/fullgarf"
-	fullgarf \
+	$SCRIPTDIR/fullgarf \
             "$pha2" \
             "$row" \
-            "$evt2a" \
+            "$evt2" \
             "$asol1" \
             "grid($rmfout[cols ENERG_LO,ENERG_HI])" \
             "$dtf1" \
@@ -221,6 +221,34 @@ make_response()
 	   "$arfout"
     done
     \rm -rf "$outdir/fullgarf"
+
+    local x y
+    read x y <<<$( dmlist "$evt2"'[region][col sky]' data,raw | \head -2 | \tail -1 )
+
+    local asphist="$outdir/${obsid}_asphist.fits"
+    punlearn asphist
+    asphist \
+        "$asol1" \
+        "$asphist" \
+        "$evt2" \
+        "$dtf1"
+
+    local arf="$outdir/tg/hrcf${obsid}_0th.arf"
+    local rmffile=$(\ls "$outdir/tg/hrcf${obsid}_"*"_p1.rmf" | \tail -1)
+    local grating=$(dmkeypar "$pha2" grating ec+)
+    punlearn mkarf
+    mkarf \
+        asphistfile="$asphist" \
+        outfile="$arf" \
+        sourcepixelx="$x" \
+        sourcepixely="$y" \
+        engrid='grid('"$rmffile"'[cols ENERG_LO,ENERG_HI])' \
+        obsfile="$pha2"'[SPECTRUM]' \
+        detsubsys="$detsubsys" \
+        grating=$grating \
+        maskfile=NONE \
+        verbose=0 \
+        clobber+
 }
 
 
