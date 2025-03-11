@@ -15,8 +15,13 @@ download_data()
     /proj/axaf/simul/bin/arc5gl -stdin <<EOP #1>/dev/null
 dataset=flight
 operation=retrieve
-detector=hrc
 obsid=$obsid
+detector=ephem
+subdetector=orbit
+level=1
+go
+detector=hrc
+subdetector=
 level=0.5
 filetype=hrcss0_5
 go
@@ -39,7 +44,7 @@ EOP
 
     rm -f *aoff* *soff*
 
-    \mv *_{dtf,fov,asol}1.fits* primary
+    \mv *_{eph,dtf,fov,asol}1.fits* primary
     \mv *_{bpix,evt,msk,mtl,std_flt,std_dtfstat}1.fits* secondary
     \mv *_{4_eng,evt,ss}0.fits* *_ss0a.fits* hk
 
