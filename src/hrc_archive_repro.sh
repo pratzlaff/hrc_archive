@@ -82,7 +82,7 @@ dmhedit "$asol1" file="" op=add key=CONTENT value=ASPSOLOBI
 #
 # patch_hrc_ssc
 #
-false && {
+true && {
     mtl1=$(get_mtl1 "$indir")
     evt1_old=$(get_evt1 "$indir")
     evt1_ssc="$outdir/hrcf${obsid}_evt1_ssc.fits"
@@ -385,19 +385,21 @@ grating=$(pquery "$obs_par" grating)
 }
 
 
-\rm -f \
-    "$evt1_old" \
-    "$bpix1" \
-    "$obs_par" \
-    "$evt1" \
-    "$obs_par_deroll" \
-    "$evt1_deroll" \
-    "$flt_evt1" \
-    "$flt_evt1_deroll" \
-    "$evt2_deroll" \
-    "${evt2_deroll}.tmp" \
-    "$dtf1_ssc" \
-    "$flt1_ssc" \
-    "$dtfstats"
+true && {
+    \rm -f \
+	"$evt1_old" \
+	"$bpix1" \
+	"$obs_par" \
+	"$evt1" \
+	"$obs_par_deroll" \
+	"$evt1_deroll" \
+	"$flt_evt1" \
+	"$flt_evt1_deroll" \
+	"$evt2_deroll" \
+	"${evt2_deroll}.tmp" \
+	"$dtf1_ssc" \
+	"$flt1_ssc" \
+	"$dtfstats"
+}
 #false && [[ $(hostname) =~ (legs|milagro) ]] || rm -f "$asol1_deroll"
 
