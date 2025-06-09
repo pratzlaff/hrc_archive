@@ -2,8 +2,7 @@
 
 # process set i of n for either I or S detector
 
-set -e
-set -o pipefail
+set -eo pipefail
 
 [ $# -eq 4 ] || {
   \echo "Usage: obsid_file outdir i n" 1>&2

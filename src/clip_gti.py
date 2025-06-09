@@ -8,7 +8,7 @@ def clip_gti(args):
         start = hdulist['gti'].data['start']
         stop = hdulist['gti'].data['stop']
 
-        start[0] = arch_start
+        start[0] = args.start
 
         # FIXME: this can happen if a start/stop are both less than
         # archival start
@@ -21,7 +21,7 @@ def main():
     parser = argparse.ArgumentParser(
         description='Clip patch_hrc_ssc GIT START[0], according to archival START[0].'
     )
-    parser.add_argument('start', type=f, help='Archival std_flt1 first START value.')
+    parser.add_argument('start', type=float, help='Archival std_flt1 first START value.')
     parser.add_argument('phsgti', help='patch_hrc_ssc output std_flt1.')
     parser.add_argument('outgti', help='New, clipped std_flt1.')
     args = parser.parse_args()
