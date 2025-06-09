@@ -82,16 +82,24 @@ dmhedit "$asol1" file="" op=add key=CONTENT value=ASPSOLOBI
 #
 # patch_hrc_ssc
 #
+flt1=$(get_flt1 "$indir")
 true && {
+    start=$(dmlist "$dtf1"'[gti]' data,raw | tail -n +2 | head -1 | perl -anle 'print $F[0]')
+    [ -z "$start" ] && {
+	\echo "FIXME: no START found in '$dtf1', exiting." 1>&2
+	exit
+    }
     mtl1=$(get_mtl1 "$indir")
     evt1_old=$(get_evt1 "$indir")
     evt1_ssc="$outdir/hrcf${obsid}_evt1_ssc.fits"
     flt1_ssc=${evt1_ssc/evt1/std_flt1}
     dtf1_ssc=${evt1_ssc/evt1/dtf1}
     punlearn patch_hrc_ssc
-    patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 100000 cl+ 2>&1 | \tee $outdir/patch_hrc_ssc.log
+    patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 cl+ 2>&1 | \tee $outdir/patch_hrc_ssc.log
+    flt1_clipped=${$flt1_ssc/ssc/ssc_clipped}
+    python3 clip_gti.py $start "$flt1_ssc" "$flt1_clipped"
     evt1_old=$evt1_ssc
-    flt1=$flt1_ssc
+    flt1=$flt1_clipped
     dtf1=$dtf1_ssc
 }
 
@@ -108,7 +116,6 @@ true && {
 	\cp "$evt1_old" "$evt1_old_tmp"
     }
     evt1_old="$evt1_old_tmp"
-    flt1=$(get_flt1 "$indir")
     dtf1=$(get_dtf1 "$indir")
 }
 

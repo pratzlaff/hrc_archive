@@ -4,9 +4,6 @@ import numpy as np
 
 def clip_gti(args):
 
-    with fits.open(args.archgti) as hdulist:
-        arch_start = hdulist['gti'].data['start'][0]
-
     with fits.open(args.phsgti) as hdulist:
         start = hdulist['gti'].data['start']
         stop = hdulist['gti'].data['stop']
@@ -24,7 +21,7 @@ def main():
     parser = argparse.ArgumentParser(
         description='Clip patch_hrc_ssc GIT START[0], according to archival START[0].'
     )
-    parser.add_argument('archgti', help='Archival std_flt1.')
+    parser.add_argument('start', type=f, help='Archival std_flt1 first START value.')
     parser.add_argument('phsgti', help='patch_hrc_ssc output std_flt1.')
     parser.add_argument('outgti', help='New, clipped std_flt1.')
     args = parser.parse_args()
