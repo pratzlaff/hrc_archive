@@ -84,7 +84,7 @@ dmhedit "$asol1" file="" op=add key=CONTENT value=ASPSOLOBI
 #
 flt1=$(get_flt1 "$indir")
 true && {
-    start=$(dmlist "$dtf1"'[gti]' data,raw | tail -n +2 | head -1 | perl -anle 'print $F[0]')
+    start=$(dmlist "$flt1"'[gti]' data,raw | tail -n +2 | head -1 | perl -anle 'print $F[0]')
     [ -z "$start" ] && {
 	\echo "FIXME: no START found in '$dtf1', exiting." 1>&2
 	exit
