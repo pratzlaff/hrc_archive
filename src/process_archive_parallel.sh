@@ -13,10 +13,11 @@ n=4
 
 . ~/python3_venv/bin/activate
 tmpfile=$(mktemp)
-#python3 /data/legs/rpete/flight/hrc_archive/src/obsids.py > "$tmpfile"
+python3 /data/legs/rpete/flight/hrc_archive/src/obsids.py > "$tmpfile"
+outdir=/data/loss/rpete/hrc
 
-cp -a /data/legs/rpete/flight/hrc_archive/obsids_hz43 "$tmpfile"
-outdir=/data/loss/rpete/hz43_patch_hrc_ssc
+#cp -a /data/legs/rpete/flight/hrc_archive/obsids_hz43 "$tmpfile"
+#outdir=/data/loss/rpete/hz43_patch_hrc_ssc
 
 script=/data/legs/rpete/flight/hrc_archive/src/process_archive.sh
 

@@ -84,11 +84,6 @@ dmhedit "$asol1" file="" op=add key=CONTENT value=ASPSOLOBI
 #
 flt1=$(get_flt1 "$indir")
 true && {
-    start=$(dmlist "$flt1"'[gti]' data,raw | tail -n +2 | head -1 | perl -anle 'print $F[0]')
-    [ -z "$start" ] && {
-	\echo "FIXME: no START found in '$dtf1', exiting." 1>&2
-	exit
-    }
     mtl1=$(get_mtl1 "$indir")
     evt1_old=$(get_evt1 "$indir")
     evt1_ssc="$outdir/hrcf${obsid}_evt1_ssc.fits"
@@ -98,7 +93,7 @@ true && {
     patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 cl+ 2>&1 | \tee $outdir/patch_hrc_ssc.log
     \grep -qi '^ssc detected' $outdir/patch_hrc_ssc.log && {
         flt1_clipped=${flt1_ssc/std_flt1_ssc/std_flt1_ssc_clipped}
-        /usr/bin/python3 $SCRIPTDIR/clip_gti.py $start "$flt1_ssc" "$flt1_clipped"
+        perl $SCRIPTDIR/clip_gti.pl "$flt1" "$flt1_ssc" "$flt1_clipped"
         evt1_old=$evt1_ssc
         flt1=$flt1_clipped
         dtf1=$dtf1_ssc
