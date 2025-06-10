@@ -83,6 +83,10 @@ dmhedit "$asol1" file="" op=add key=CONTENT value=ASPSOLOBI
 # patch_hrc_ssc
 #
 flt1=$(get_flt1 "$indir")
+dmlist "$flt1" blocks | \grep -qi gti || {
+  \echo "FIXME: no GTI found in '$flt1', exiting." 1>&2
+  exit
+}
 true && {
     mtl1=$(get_mtl1 "$indir")
     evt1_old=$(get_evt1 "$indir")
