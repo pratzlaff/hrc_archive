@@ -1,10 +1,9 @@
 #! /bin/bash
 
-set -e
-set -o pipefail
+set -eo pipefail
 
 [ $# -eq 2 ] || {
-    \echo "Usage: $0 obsid outdir" 2>&1
+    \echo "Usage: $0 obsid outdir" 1>&2
     exit 1
 }
 
