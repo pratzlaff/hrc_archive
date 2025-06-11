@@ -51,4 +51,4 @@ dec_targ=$(dmkeypar "$evt2" dec_targ ec+)
 
 evt2_bary=${evt2/evt2/evt2_bary}
 punlearn axbary
-axbary "$evt2" "$eph1" "$evt2_bary" $ra_targ $dec_targ
+axbary "$evt2" "$eph1" "$evt2_bary" $ra_targ $dec_targ cl+
