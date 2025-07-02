@@ -7,19 +7,16 @@ set -eo pipefail
   exit 1
 }
 
-
-n=13
+# number of simultaneou screen sessions
 n=4
 
-. ~/python3_venv/bin/activate
 tmpfile=$(mktemp)
-python3 /data/legs/rpete/flight/hrc_archive/src/obsids.py > "$tmpfile"
 outdir=/data/loss/rpete/hrc
-
-#cp -a /data/legs/rpete/flight/hrc_archive/obsids_hz43 "$tmpfile"
-#outdir=/data/loss/rpete/hz43_patch_hrc_ssc
-
 script=/data/legs/rpete/flight/hrc_archive/src/process_archive.sh
+
+. /home/rpete/python3_venv/bin/activate
+python3 /data/legs/rpete/flight/hrc_archive/src/obsids.py > "$tmpfile"
+deactivate
 
 sname=archive
 screen -dmS $sname

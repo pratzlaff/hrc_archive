@@ -24,7 +24,7 @@ logdir="$outdir/incomplete"
 mkdir -p "$logdir"
 
 . /data/legs/rpete/flight/analysis_functions/util.bash
-#. ~/python3_venv/bin/activate
+
 obsids=$(cat "$ofile")
 
 obsids=$(i_of_n $i $n $obsids)
@@ -36,7 +36,6 @@ do
   (( ++j ))
   obsid=$(printf %05d $(sed s/^0*// <<<$obsid))
   \echo "********** Processing ObsID $obsid: $j of $nobsids **********" 1>&2
-  #echo "$script $indir/$obsid $outdir/$obsid/analysis 2>&1 | \tee $outdir/$obsid/analysis/hrc_archive_repro.log"
   bash -x $script $obsid $outdir 2>&1 | \tee "$logdir/hrc_archive_repro.log.$obsid"
 
   # in cases where there was not data downloaded, there won't be [is]/$obsid directory
