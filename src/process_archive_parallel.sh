@@ -8,11 +8,11 @@ set -eo pipefail
 }
 
 # number of simultaneou screen sessions
-n=4
+n=3
 
 tmpfile=$(mktemp)
 outdir=/data/loss/rpete/hrc
-script=/data/legs/rpete/flight/hrc_archive/src/process_archive.sh
+script=/data/legs/rpete/flight/hrc_archive/src/process_archive_i_of_n.sh
 
 . /home/rpete/python3_venv/bin/activate
 python3 /data/legs/rpete/flight/hrc_archive/src/obsids.py > "$tmpfile"
