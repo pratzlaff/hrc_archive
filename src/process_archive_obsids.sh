@@ -10,7 +10,12 @@ set -eo pipefail
 }
 
 outdir="$1"
+[ -d "$outdir" ] || {
+  echo "directory does not exist, exiting: '$outdir'" 1>&2
+  exit 1
+}
 shift
+
 obsids="$@"
 emails='pratzlaff@cfa.harvard.edu'
 
@@ -19,8 +24,16 @@ logdir="$outdir/incomplete"
 mkdir -p "$logdir"
 
 nobsids=$(\echo $obsids | wc -w)
+
+[ $nobsids -eq 0 ] && {
+  \echo There are no ObsIDs to process.
+  exit
+}
+
+obsids_str=$(echo $obsids | perl -anle 'print "\t$_" for @F')
+echo -e "Processing $nobsids ObsIDs:\n${obsids_str}\n"
+
 j=0
-echo $obsids
 for obsid in $obsids
 do
   (( ++j ))
@@ -40,9 +53,10 @@ do
   done
 done
 
-obsids_str=$(echo $obsids | perl -anle 'print "\t$_" for @F')
-for email in $emails
-do
-  echo -e "Processed $nobsids obsids:\n${obsids_str}" | mailx '-sprocess_archive_obsids.sh finished' "$email"
-done
+false && {
+  for email in $emails
+  do
+    echo -e "Processed $nobsids ObsIDs:\n${obsids_str}" | mailx '-sprocess_archive_obsids.sh finished' "$email"
+  done
+}
 
