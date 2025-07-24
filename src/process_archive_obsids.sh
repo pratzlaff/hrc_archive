@@ -30,8 +30,12 @@ nobsids=$(\echo $obsids | wc -w)
   exit
 }
 
-obsids_str=$(echo $obsids | perl -anle 'print "\t$_" for @F')
-echo -e "Processing $nobsids ObsIDs:\n${obsids_str}\n"
+msg="Processing $nobsids ObsID"
+[ $nobsids -gt 1 ] && {
+    msg+=s
+}
+msg+=":\n"$(echo $obsids | perl -anle 'print "\t$_" for @F')"\n"
+echo -e "$msg"
 
 j=0
 for obsid in $obsids
