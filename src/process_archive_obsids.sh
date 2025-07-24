@@ -60,7 +60,7 @@ done
 false && {
   for email in $emails
   do
-    echo -e "Processed $nobsids ObsIDs:\n${obsids_str}" | mailx '-sprocess_archive_obsids.sh finished' "$email"
+    echo -e "$msg" | mailx '-sprocess_archive_obsids.sh finished' "$email"
   done
 }
 
