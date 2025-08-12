@@ -25,12 +25,7 @@ subdetector=
 level=0.5
 filetype=hrcss0_5
 go
-level=0
-filetype=hrcss
-go
-level=0
-filetype=evt0
-go
+retrieve hrc0
 filetype=hrc4eng
 subdetector=eng
 go
@@ -46,7 +41,7 @@ EOP
 
     \mv *_{eph,dtf,fov,asol}1.fits* primary
     \mv *_{bpix,evt,msk,mtl,std_flt,std_dtfstat}1.fits* secondary
-    \mv *_{4_eng,evt,ss}0.fits* *_ss0a.fits* hk
+    \mv *_{4_eng,evt,ss,hk}0.fits* *_ss0a.fits* hk
 
     \cd -
     ls $outdir/secondary/*evt1.fits* 1>/dev/null 2>&1
