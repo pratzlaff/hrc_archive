@@ -24,7 +24,6 @@ script=/data/legs/rpete/flight/hrc_archive/src/process_archive_obsids.sh
 . /data/legs/rpete/flight/analysis_functions/util.bash
 
 obsids=$(cat "$ofile")
-obsids=''
 
 obsids=$(i_of_n $i $n $obsids)
 bash -x "$script" "$outdir" $obsids
