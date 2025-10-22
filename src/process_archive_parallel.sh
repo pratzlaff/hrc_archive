@@ -7,24 +7,14 @@ set -eo pipefail
   exit 1
 }
 
-# number of simultaneou screen sessions
-n=3
+n=4
 
-tmpfile=$(mktemp)
 outdir=/data/loss/rpete/hrc
-script=/data/legs/rpete/flight/hrc_archive/src/process_archive_i_of_n.sh
+script=/data/legs/rpete/flight/hrc_archive/src/process_archive_obsids.sh
+parallel=/data/legs/rpete/flight/hrc_archive/src/parallel
 
 . /home/rpete/python3_venv/bin/activate
-python3 /data/legs/rpete/flight/hrc_archive/src/obsids.py > "$tmpfile"
+obsids=$(python3 /data/legs/rpete/flight/hrc_archive/src/obsids.py)
 deactivate
 
-sname=archive
-screen -dmS $sname
-for i in $(seq $n)
-do
-  screen -S $sname -X screen bash -c "time $script $tmpfile $outdir $i $n; exec bash;"
-done
-screen -S $sname -p0 -X kill
-screen -rS $sname 
-
-rm -f  "$tmpfile"
+time "$parallel" --dry-run -j $n bash "$script" "$outdir" ::: $obsids
