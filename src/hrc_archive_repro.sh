@@ -14,6 +14,28 @@ SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
 . $SCRIPTDIR/hrc_archive_repro_functions.sh
 
+cleanup_files() {
+    cmd='\rm -f \
+	"$evt1_old" \
+	"$bpix1" \
+	"$obs_par" \
+	"$evt1" \
+	"$obs_par_deroll" \
+	"$evt1_deroll" \
+	"$flt_evt1" \
+	"$flt_evt1_deroll" \
+	"$evt2_deroll" \
+	"${evt2_deroll}.tmp" \
+	"$dtf1_ssc" \
+	"$flt1_ssc" \
+	"$dtfstats" \
+	"$evt2_coords" \
+	"$src2a" \
+	"$L2a"'
+    eval "$cmd"
+}
+
+
 \rm -rf "$outdir/incomplete/$obsid"
 mkdir -p "$outdir/incomplete/$obsid"
 download_data $obsid "$outdir/incomplete/$obsid" || {
@@ -93,13 +115,18 @@ true && {
     flt1_ssc=${evt1_ssc/evt1/std_flt1}
     dtf1_ssc=${evt1_ssc/evt1/dtf1}
     punlearn patch_hrc_ssc
-    patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 cl+ 2>&1 | \tee $outdir/patch_hrc_ssc.log
+    $SCRIPTDIR/patch_hrc_ssc/bin/patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 cl+ 2>&1 | \tee $outdir/patch_hrc_ssc.log
     \grep -qi '^ssc detected' $outdir/patch_hrc_ssc.log && {
+      false && {
         flt1_clipped=${flt1_ssc/std_flt1_ssc/std_flt1_ssc_clipped}
         /proj/axaf/bin/perl $SCRIPTDIR/clip_gti.pl "$flt1" "$flt1_ssc" "$flt1_clipped"
         evt1_old=$evt1_ssc
         flt1=$flt1_clipped
         dtf1=$dtf1_ssc
+      } || {
+        evt1_old=$evt1_ssc
+        flt1=$flt1_ssc
+      }
     }
 }
 
@@ -148,6 +175,9 @@ python "$SCRIPTDIR"/make_par "$evt1_old" "$asol1" "$obs_par" || {
 bpix1=${asol1/asol/bpix}
 punlearn hrc_build_badpix
 hrc_build_badpix CALDB "$bpix1" "$obs_par" degapfile=CALDB cl+
+
+punlearn geom
+pset geom instruments=/data/legs/rpete/flight/hrc_archive/new_geom.fits
 
 #
 # Usual hpe run.
@@ -217,6 +247,8 @@ hrc_process_events \
     $(gainfile_cases $obsid) \
     cl+
 r4_header_update "$evt1_deroll"
+
+punlearn geom
 
 #
 # PI filter
@@ -302,6 +334,12 @@ grating=$(pquery "$obs_par" grating)
 	outfile="$src2a" \
 	zo_pos_x="$x" zo_pos_y="$y" \
 	cl+
+    nsources=$(dmlist "$src2a" header,raw | grep -i naxis2 | perl -anle 'print $F[5]')
+    [ $nsources -gt 0 ] || {
+	\echo "FIXME: no sources detected in '$evt2'" >&2
+	cleanup_files
+	exit
+    }
 
     L2a=${evt1/evt1/evt2_L1a}
     punlearn tg_create_mask
@@ -381,32 +419,13 @@ grating=$(pquery "$obs_par" grating)
 
     \mv "$evt2a" "$evt2"
 
-    \rm -f \
-	"$evt2_coords" \
-	"$src2a" \
-	"$L2a"
 } || {
     punlearn dmpaste
     dmpaste "${evt2}" "${evt2_deroll}.tmp[col x2,y2]" "${evt2}.tmp" cl+
     \mv "${evt2}.tmp" "${evt2}"
 }
 
+true && cleanup_files
 
-true && {
-    \rm -f \
-	"$evt1_old" \
-	"$bpix1" \
-	"$obs_par" \
-	"$evt1" \
-	"$obs_par_deroll" \
-	"$evt1_deroll" \
-	"$flt_evt1" \
-	"$flt_evt1_deroll" \
-	"$evt2_deroll" \
-	"${evt2_deroll}.tmp" \
-	"$dtf1_ssc" \
-	"$flt1_ssc" \
-	"$dtfstats"
-}
 #false && [[ $(hostname) =~ (legs|milagro) ]] || rm -f "$asol1_deroll"
 
