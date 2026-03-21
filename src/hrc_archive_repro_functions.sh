@@ -147,7 +147,7 @@ rangelev_widthres_set()
 make_response()
 {
     local evt2="$evt2a"
-    local rmfdir=../../../../rmfs
+    local rmfdir=../../../../../hrc/rmfs
 
     case "$detnam" in
         hrc-i*) detsubsys=HRC-I
