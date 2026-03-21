@@ -9,14 +9,14 @@ set -eo pipefail
 
 dir="$1"
 
-evt2=$(ls "$dir"/analysis/hrcf[0-9][0-9][0-9][0-9][0-9]_evt2.fits)
+evt2=$(\ls "$dir"/analysis/hrcf[0-9][0-9][0-9][0-9][0-9]_evt2.fits)
 nevt2=$(echo "$evt2" | wc -w)
 [ $nevt2 -eq 1 ] || {
     echo "found $nevt2 evt2 files in '$dir/analysis'" 1>&2
     exit
 }
 
-eph1=$(ls "$dir"/primary/orbitf*_eph1.fits*)
+eph1=$(\ls "$dir"/primary/orbitf*_eph1.fits*)
 neph1=$(echo "$eph1" | wc -w)
 [ $neph1 -eq 1 ] || {
     echo "found $neph1 eph1 files in '$dir/primary'" 1>&2
