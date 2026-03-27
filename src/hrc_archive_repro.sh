@@ -294,15 +294,23 @@ true && {
 }
 
 #
-# Pull out unrolled sky coordinates. Columns must be reordered to
+# Copy unrolled sky coordinates. Columns must be reordered to
 # remove the sky vector, so that they can later be merged with the
 # evt2{,a}.
 #
 punlearn dmcopy
-dmcopy \
-    infile="$evt2_deroll[cols y2=y,x2=x]" \
-    outfile="${evt2_deroll}.tmp" \
-    cl+
+punlearn dmpaste
+dmcopy "$evt2_deroll[cols y2=y,x2=x]" "${evt2_deroll}.tmp" cl+
+dmpaste "${evt2}" "${evt2_deroll}.tmp[col x2,y2]" "${evt2}.tmp" cl+
+\mv "${evt2}.tmp" "${evt2}"
+
+#
+# Copy celestial coordinates
+#
+evt2_eqpos=${evt1/evt1/evt2_eqpos}
+dmcopy "$evt2[col eqpos]" "${evt2_eqpos}" cl+
+dmpaste "${evt2}" "${evt2_eqpos}" "${evt2}.tmp" cl+
+\mv "${evt2}.tmp" "${evt2}"
 
 grating=$(pquery "$obs_par" grating)
 
@@ -350,17 +358,6 @@ grating=$(pquery "$obs_par" grating)
 	grating_obs=header_value \
 	cl+
 
-    #
-    # Pull out celestial coordinates, so they can be merged into the
-    # output of tg_resolve_events.
-    #
-    evt2_coords=${evt1/evt1/evt2_coords}
-    punlearn dmcopy
-    dmcopy \
-	infile="$evt2[cols ra,dec]" \
-	outfile="${evt2_coords}" \
-	cl+
-
     evt2a=${evt1/evt1/evt2a}
     punlearn tg_resolve_events
     tg_resolve_events \
@@ -373,15 +370,12 @@ grating=$(pquery "$obs_par" grating)
 	cl+
 
     #
-    # paste the celestion and deroll coordinates
+    # paste the equatorial and deroll coordinates
     #
-
-    punlearn dmpaste
-    dmpaste "${evt2a}" "${evt2_coords}[col ra,dec]" "${evt2a}.tmp" cl+
+    dmpaste "${evt2a}" "${evt2_coords}" "${evt2a}.tmp" cl+
     \mv "${evt2a}.tmp" "${evt2a}"
 
-    punlearn dmpaste
-    dmpaste "${evt2a}" "${evt2_deroll}.tmp[col x2,y2]" "${evt2a}.tmp" cl+
+    dmpaste "${evt2a}" "${evt2_deroll}.tmp[col x2, y2]" "${evt2a}.tmp" cl+
     \mv "${evt2a}.tmp" "${evt2a}"
 
     #
@@ -419,10 +413,6 @@ grating=$(pquery "$obs_par" grating)
 
     \mv "$evt2a" "$evt2"
 
-} || {
-    punlearn dmpaste
-    dmpaste "${evt2}" "${evt2_deroll}.tmp[col x2,y2]" "${evt2}.tmp" cl+
-    \mv "${evt2}.tmp" "${evt2}"
 }
 
 true && cleanup_files
