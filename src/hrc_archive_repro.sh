@@ -29,7 +29,7 @@ cleanup_files() {
 	"$dtf1_ssc" \
 	"$flt1_ssc" \
 	"$dtfstats" \
-	"$evt2_coords" \
+	"$evt2_eqpos" \
 	"$src2a" \
 	"$L2a"'
     eval "$cmd"
@@ -293,24 +293,15 @@ true && {
     }
 }
 
-#
-# Copy unrolled sky coordinates. Columns must be reordered to
+# Extract unrolled sky coordinates. Columns must be reordered to
 # remove the sky vector, so that they can later be merged with the
 # evt2{,a}.
-#
 punlearn dmcopy
-punlearn dmpaste
 dmcopy "$evt2_deroll[cols y2=y,x2=x]" "${evt2_deroll}.tmp" cl+
-dmpaste "${evt2}" "${evt2_deroll}.tmp[col x2,y2]" "${evt2}.tmp" cl+
-\mv "${evt2}.tmp" "${evt2}"
 
-#
-# Copy celestial coordinates
-#
+# Extract unrolled sky and equatorial coordinates.
 evt2_eqpos=${evt1/evt1/evt2_eqpos}
 dmcopy "$evt2[col eqpos]" "${evt2_eqpos}" cl+
-dmpaste "${evt2}" "${evt2_eqpos}" "${evt2}.tmp" cl+
-\mv "${evt2}.tmp" "${evt2}"
 
 grating=$(pquery "$obs_par" grating)
 
@@ -345,6 +336,14 @@ grating=$(pquery "$obs_par" grating)
     nsources=$(dmlist "$src2a" header,raw | grep -i naxis2 | perl -anle 'print $F[5]')
     [ $nsources -gt 0 ] || {
 	\echo "FIXME: no sources detected in '$evt2'" >&2
+
+        punlearn dmpaste
+        dmpaste "${evt2}" "${evt2_eqpos}" "${evt2}.tmp" cl+
+        \mv "${evt2}.tmp" "${evt2}"
+
+        dmpaste "${evt2}" "${evt2_deroll}.tmp[col x2,y2]" "${evt2}.tmp" cl+
+        \mv "${evt2}.tmp" "${evt2}"
+
 	cleanup_files
 	exit
     }
@@ -372,7 +371,7 @@ grating=$(pquery "$obs_par" grating)
     #
     # paste the equatorial and deroll coordinates
     #
-    dmpaste "${evt2a}" "${evt2_coords}" "${evt2a}.tmp" cl+
+    dmpaste "${evt2a}" "${evt2_eqpos}" "${evt2a}.tmp" cl+
     \mv "${evt2a}.tmp" "${evt2a}"
 
     dmpaste "${evt2a}" "${evt2_deroll}.tmp[col x2, y2]" "${evt2a}.tmp" cl+
@@ -413,6 +412,13 @@ grating=$(pquery "$obs_par" grating)
 
     \mv "$evt2a" "$evt2"
 
+} || {
+    punlearn dmpaste
+    dmpaste "${evt2}" "${evt2_deroll}.tmp[col x2,y2]" "${evt2}.tmp" cl+
+    \mv "${evt2}.tmp" "${evt2}"
+
+    dmpaste "${evt2}" "${evt2_eqpos}" "${evt2}.tmp" cl+
+    \mv "${evt2}.tmp" "${evt2}"
 }
 
 true && cleanup_files
