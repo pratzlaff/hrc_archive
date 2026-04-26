@@ -115,7 +115,7 @@ true && {
     flt1_ssc=${evt1_ssc/evt1/std_flt1}
     dtf1_ssc=${evt1_ssc/evt1/dtf1}
     punlearn patch_hrc_ssc
-    $SCRIPTDIR/patch_hrc_ssc/bin/patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 cl+ 2>&1 | \tee $outdir/patch_hrc_ssc.log
+    patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 cl+ 2>&1 | \tee $outdir/patch_hrc_ssc.log
     \grep -qi '^ssc detected' $outdir/patch_hrc_ssc.log && {
       false && {
         flt1_clipped=${flt1_ssc/std_flt1_ssc/std_flt1_ssc_clipped}
