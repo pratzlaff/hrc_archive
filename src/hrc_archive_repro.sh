@@ -25,11 +25,11 @@ cleanup_files() {
 	"$flt_evt1" \
 	"$flt_evt1_deroll" \
 	"$evt2_deroll" \
+	"$evt2_bary" \
 	"${evt2_deroll}.tmp" \
 	"$dtf1_ssc" \
 	"$flt1_ssc" \
 	"$dtfstats" \
-	"$evt2_eqpos" \
 	"$src2a" \
 	"$L2a"'
     eval "$cmd"
@@ -117,16 +117,8 @@ true && {
     punlearn patch_hrc_ssc
     patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 cl+ 2>&1 | \tee $outdir/patch_hrc_ssc.log
     \grep -qi '^ssc detected' $outdir/patch_hrc_ssc.log && {
-      false && {
-        flt1_clipped=${flt1_ssc/std_flt1_ssc/std_flt1_ssc_clipped}
-        /proj/axaf/bin/perl $SCRIPTDIR/clip_gti.pl "$flt1" "$flt1_ssc" "$flt1_clipped"
-        evt1_old=$evt1_ssc
-        flt1=$flt1_clipped
-        dtf1=$dtf1_ssc
-      } || {
         evt1_old=$evt1_ssc
         flt1=$flt1_ssc
-      }
     }
 }
 
@@ -299,9 +291,30 @@ true && {
 punlearn dmcopy
 dmcopy "$evt2_deroll[cols y2=y,x2=x]" "${evt2_deroll}.tmp" cl+
 
-# Extract unrolled sky and equatorial coordinates.
-evt2_eqpos=${evt1/evt1/evt2_eqpos}
-dmcopy "$evt2[col eqpos]" "${evt2_eqpos}" cl+
+#
+# create barycentric-corrected file
+#
+eph1=$(\ls "$indir"/primary/orbitf*_eph1.fits*)
+neph1=$(echo "$eph1" | wc -w)
+[ $neph1 -eq 1 ] || {
+    echo "FIXME: found $neph1 eph1 files in '$indir/primary'" >&2
+    exit
+}
+ra_targ=$(dmkeypar "$evt2" ra_targ ec+)
+dec_targ=$(dmkeypar "$evt2" dec_targ ec+)
+[ -z "$ra_targ" -o -z "$dec_targ" ] && {
+    echo "FIXME: did not find (RA|DEC)_TARG in '$evt2'" >&2
+    exit
+}
+evt2_bary=${evt2/evt2/evt2_bary}
+punlearn axbary
+axbary "$evt2" "$eph1" "$evt2_bary" $ra_targ $dec_targ cl+
+
+#
+# retain only times, eqpos in axbary_mist
+#
+evt2_bary_misc=${evt2/evt2/evt2_bary_misc}
+dmcopy "${evt2_bary}[col time, eqpos]" "${evt2_bary_misc}" cl+
 
 grating=$(pquery "$obs_par" grating)
 
@@ -338,9 +351,6 @@ grating=$(pquery "$obs_par" grating)
 	\echo "FIXME: no sources detected in '$evt2'" >&2
 
         punlearn dmpaste
-        dmpaste "${evt2}" "${evt2_eqpos}" "${evt2}.tmp" cl+
-        \mv "${evt2}.tmp" "${evt2}"
-
         dmpaste "${evt2}" "${evt2_deroll}.tmp[col x2,y2]" "${evt2}.tmp" cl+
         \mv "${evt2}.tmp" "${evt2}"
 
@@ -369,11 +379,8 @@ grating=$(pquery "$obs_par" grating)
 	cl+
 
     #
-    # paste the equatorial and deroll coordinates
+    # paste the deroll coordinates
     #
-    dmpaste "${evt2a}" "${evt2_eqpos}" "${evt2a}.tmp" cl+
-    \mv "${evt2a}.tmp" "${evt2a}"
-
     dmpaste "${evt2a}" "${evt2_deroll}.tmp[col x2, y2]" "${evt2a}.tmp" cl+
     \mv "${evt2a}.tmp" "${evt2a}"
 
@@ -415,9 +422,6 @@ grating=$(pquery "$obs_par" grating)
 } || {
     punlearn dmpaste
     dmpaste "${evt2}" "${evt2_deroll}.tmp[col x2,y2]" "${evt2}.tmp" cl+
-    \mv "${evt2}.tmp" "${evt2}"
-
-    dmpaste "${evt2}" "${evt2_eqpos}" "${evt2}.tmp" cl+
     \mv "${evt2}.tmp" "${evt2}"
 }
 
