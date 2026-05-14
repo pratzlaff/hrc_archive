@@ -1,5 +1,5 @@
 import argparse
-from datetime import datetime, timedelta
+import datetime
 import numpy as np
 import os
 import re
@@ -10,8 +10,8 @@ def main():
     parser = argparse.ArgumentParser(
         description='Print HRC obsids.' 
     )
-    parser.add_argument('--start', default=(datetime.utcnow()-timedelta(weeks=2)).strftime('%Y-%m-%d'), help='Start date.')
-    parser.add_argument('--stop', default=datetime.utcnow().strftime('%Y-%m-%d'), help='Stop date.')
+    parser.add_argument('--start', default=(datetime.datetime.now(datetime.UTC)-datetime.timedelta(weeks=2)).strftime('%Y-%m-%d'), help='Start date.')
+    parser.add_argument('--stop', default=datetime.datetime.now(datetime.UTC).strftime('%Y-%m-%d'), help='Stop date.')
     parser.add_argument('--basedir', default='/data/loss/rpete/hrc', help='Where to look for existing reprocessed data.')
     parser.add_argument('--ignore_existing', default=True, action=argparse.BooleanOptionalAction, help='Ignore existing ObsIDs in basedir.')
     args = parser.parse_args()
@@ -45,7 +45,18 @@ go
     obsids = re.findall(r'hrcf(\d{5})_.*evt1.fits', output)
     if args.ignore_existing:
         obsids = filter_existing(obsids, args.basedir)
-    return obsids
+    matches = {}
+    for o in obsids:
+        if o in matches:
+            matches[o] += 1
+        else:
+            matches[o] = 1
+
+    for o in matches:
+        if matches[o] > 1:
+            sys.stderr.write(f'ObsID {o}: {matches[o]} evt1 files\n')
+
+    return list(matches.keys())
 
 def filter_existing(obsids, basedir):
     return [o for o in obsids if not os.path.isdir(f'{basedir}/s/{o}') and not os.path.isdir(f'{basedir}/i/{o}')]

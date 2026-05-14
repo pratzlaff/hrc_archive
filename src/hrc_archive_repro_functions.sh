@@ -70,7 +70,7 @@ get_type()
 {
     local dir="$1"
     local type="$2"
-    \ls "$dir/"*"${type}.fits"* 2>/dev/null | \tail -1 || \echo -n ''
+    \ls "$dir/"hrcf[0-9][0-9][0-9][0-9][0-9]*"${type}.fits"* 2>/dev/null | \head -1 || \echo -n ''
 }
 
 get_evt1()
