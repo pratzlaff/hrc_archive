@@ -63,17 +63,18 @@ punlearn ardlib
 
 dtf1=$(get_dtf1 "$outdir/incomplete/$obsid")
 [ -z "$dtf1" ] && {
-  \echo "FIXME: NO DTF1 FOUND IN '$dname', exiting." 1>&2
-  exit
+    \echo "FIXME: NO DTF1 FOUND IN '$dname', exiting." >&2
+    exit
 }
 detnam=$(dmkeypar "$dtf1" detnam ec+)
 
 case "$detnam" in
     hrc-i) subdet=i ;;
     hrc-s) subdet=s ;;
-    *) \echo "This script only handles HRC data." 1>&2
+    *) \echo "This script only handles HRC data." >&2
        exit 1
 esac
+
 \mkdir -p "$outdir/$subdet"
 \rm -rf "$outdir/$subdet/$obsid"
 \mv "$outdir/incomplete/$obsid" "$outdir/$subdet"
@@ -82,23 +83,44 @@ indir="$outdir/$subdet/$obsid"
 outdir="$outdir/$subdet/$obsid/analysis"
 \mkdir -p "$outdir"
 
+evt1=$(\ls -1 "$indir/secondary/"hrcf${obsid}*"_evt1.fits"* 2>/dev/null)
+[ -z "$evt1" ] && {
+  \echo "FIXME: no EVT1 found in '$indir/secondary', exiting." >&2
+  exit
+}
+
+#
+# Some OBIs have been split, thus far they are ObsIDs
+# 01411 00279 00108 02547 03764
+#
+IDS=None
+[ $(wc -w <<< "$evt1") -gt 1 ] && {
+    IDS=$(for f in $evt1; do echo $f | perl -nle '/(_\d\d\d)/ and print $1'; done)
+}
+
+nID=0
+for ID in $IDS
+do
+    nID=$(( nID+1 ))
+    [ "$ID" = None ] && ID=
+
 #
 # Boresight correction to the aspect solution.
 #
 dtf1=$(get_dtf1 "$indir")
 asol1_stack=$(asol_stack "$indir")
 [ -z "$asol1_stack" ] && {
-  \echo "FIXME: NO PCAD FOUND IN '$indir/primary', exiting." 1>&2
+  \echo "FIXME: no PCAD found in '$indir/primary', exiting." >&2
   exit
 }
-asol1="$outdir/hrcf${obsid}_asol1.fits"
+
+asol1="$outdir/hrcf${obsid}${ID}_asol1.fits"
 tstart=$(dmkeypar "$dtf1" tstart ec+)
 tstop=$(dmkeypar "$dtf1" tstop ec+)
 punlearn dmmerge
 dmmerge "$asol1_stack[time=${tstart}:${tstop}]" "$asol1" cl+
 asp_offaxis_corr "$asol1" hrc
 dmhedit "$asol1" file="" op=add key=CONTENT value=ASPSOLOBI
-
 
 #
 # patch_hrc_ssc
@@ -111,12 +133,12 @@ dmlist "$flt1" blocks | \grep -qi gti || {
 true && {
     mtl1=$(get_mtl1 "$indir")
     evt1_old=$(get_evt1 "$indir")
-    evt1_ssc="$outdir/hrcf${obsid}_evt1_ssc.fits"
+    evt1_ssc="$outdir/hrcf${obsid}${ID}_evt1_ssc.fits"
     flt1_ssc=${evt1_ssc/evt1/std_flt1}
     dtf1_ssc=${evt1_ssc/evt1/dtf1}
     punlearn patch_hrc_ssc
-    patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 cl+ 2>&1 | \tee $outdir/patch_hrc_ssc.log
-    \grep -qi '^ssc detected' $outdir/patch_hrc_ssc.log && {
+    patch_hrc_ssc "$dtf1" "$mtl1" "$evt1_old" "$evt1_ssc" "$flt1_ssc" "$dtf1_ssc" 4000 cl+ 2>&1 | \tee $outdir/patch_hrc_ssc${ID}.log
+    \grep -qi '^ssc detected' $outdir/patch_hrc_ssc${ID}.log && {
         evt1_old=$evt1_ssc
         flt1=$flt1_ssc
     }
@@ -126,7 +148,7 @@ true && {
 # if no SSC was detected, we either copy or unzip the archive evt1
 # to cwd
 #
-[ ! -f $outdir/patch_hrc_ssc.log ] || \grep -q '^SSC not detected' $outdir/patch_hrc_ssc.log && {
+[ ! -f $outdir/patch_hrc_ssc${ID}.log ] || \grep -q '^SSC not detected' $outdir/patch_hrc_ssc${ID}.log && {
     evt1_old=$(get_evt1 "$indir")
     evt1_old_tmp="$outdir/"$(basename "$evt1_old" | \sed s/.gz$//).tmp
     [[ "$evt1_old" =~ .gz$ ]] && {
@@ -294,7 +316,7 @@ dmcopy "$evt2_deroll[cols y2=y,x2=x]" "${evt2_deroll}.tmp" cl+
 #
 # create barycentric-corrected file
 #
-eph1=$(\ls "$indir"/primary/orbitf*_eph1.fits*)
+eph1=$(\ls -1 "$indir"/primary/orbitf*_eph1.fits* | head -$nID | tail -1)
 neph1=$(echo "$eph1" | wc -w)
 [ $neph1 -eq 1 ] || {
     echo "FIXME: found $neph1 eph1 files in '$indir/primary'" >&2
@@ -427,5 +449,5 @@ grating=$(pquery "$obs_par" grating)
 
 true && cleanup_files
 
-#false && [[ $(hostname) =~ (legs|milagro) ]] || rm -f "$asol1_deroll"
+done
 

@@ -56,21 +56,25 @@ flt1_good()
 
 asol_stack()
 {
-    #\ls "$1"/primary/pcadf*asol1.fits* | perl -le 'chomp(@f=<>); print join(",", @f)'
-    \ls -1 "$1"/primary/pcadf*asol1.fits* 2>/dev/null | \tr '\n' , | \sed 's/,$/\n/' || \echo -n ''
-}
-
-osol_stack()
-{
-    #\ls "$1"/secondary/aspect/pcadf*osol1.fits* | perl -le 'chomp(@f=<>); print join(",", @f)'
-    \ls -1 "$1"/secondary/aspect/pcadf*osol1.fits* 2>/dev/null | \tr '\n' , | \sed 's/,$/\n/' || \echo -n ''
+    local indir="$1"
+    local files=$(\ls -1 "$indir"/primary/pcadf${obsid}*${ID}N*_asol1.fits* 2>/dev/null | tr '\n ' , | sed 's/,$/\n/')
+    [ -n "$files" ] && {
+	# sanity check
+	[ $(echo "$files" | tr , ' ' | wc -w) -gt 1 ] && {
+	    echo "FIXME: ID=$ID, asol_stack('$indir')='$files'" >&2
+	    exit
+	}
+	echo "$files"
+	return
+    }
+    \ls -1 "$indir"/primary/pcadf*asol1.fits* 2>/dev/null | \tr '\n' , | \sed 's/,$/\n/' || \echo -n ''
 }
 
 get_type()
 {
     local dir="$1"
     local type="$2"
-    \ls "$dir/"hrcf[0-9][0-9][0-9][0-9][0-9]*"${type}.fits"* 2>/dev/null | \head -1 || \echo -n ''
+    \ls -1 "$dir/"hrcf${obsid}*${ID}*${type}.fits* 2>/dev/null | \head -1 || \echo -n ''
 }
 
 get_evt1()
@@ -182,7 +186,7 @@ make_response()
 	local ostr=p$tg_m
 	[ $tg_m -lt 0 ] && ostr=m$(( -$tg_m ))
 	local rmfin="$rmfdir/${detstr}_${grating_arm,,}_${ostr}.rmf"
-	local rmfout="$outdir/tg/hrcf${obsid}_${grating_arm,,}_${ostr}.rmf"
+	local rmfout="$outdir/tg/hrcf${obsid}${ID}_${grating_arm,,}_${ostr}.rmf"
 	mkdir -p "$outdir/tg"
 	\ln -fs "$rmfin" "$rmfout"
 
@@ -213,11 +217,11 @@ make_response()
             "grid($rmfout[cols ENERG_LO,ENERG_HI])" \
             "$dtf1" \
             "$bpix1" \
-            "$outdir/fullgarf/${obsid}_" \
+            "$outdir/fullgarf/${obsid}${ID}_" \
             maskfile=NONE \
             clobber=yes
-	local arfout="$outdir/tg/hrcf${obsid}_${grating_arm,,}_${ostr}.arf"
-	\mv "$outdir/fullgarf/${obsid}_${grating_arm}_${tg_m}_garf.fits" \
+	local arfout="$outdir/tg/hrcf${obsid}${ID}_${grating_arm,,}_${ostr}.arf"
+	\mv "$outdir/fullgarf/${obsid}${ID}_${grating_arm}_${tg_m}_garf.fits" \
 	   "$arfout"
     done
     \rm -rf "$outdir/fullgarf"
