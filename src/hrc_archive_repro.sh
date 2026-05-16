@@ -17,7 +17,6 @@ SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 cleanup_files() {
     cmd='\rm -f \
 	"$evt1_old" \
-	"$bpix1" \
 	"$obs_par" \
 	"$evt1" \
 	"$obs_par_deroll" \
@@ -27,11 +26,11 @@ cleanup_files() {
 	"$evt2_deroll" \
 	"$evt2_bary" \
 	"${evt2_deroll}.tmp" \
-	"$dtf1_ssc" \
 	"$flt1_ssc" \
 	"$dtfstats" \
 	"$src2a" \
 	"$L2a"'
+    [ $obsid -eq 28377 -o $obsid -eq 28427 ] || cmd+=' "$bpix1" "$dtf1" '
     eval "$cmd"
 }
 
@@ -141,11 +140,13 @@ true && {
     \grep -qi '^ssc detected' $outdir/patch_hrc_ssc${ID}.log && {
         evt1_old=$evt1_ssc
         flt1=$flt1_ssc
+	dtf1=${dtf1_ssc/dtf1_ssc/dtf1}
+	mv "$dtf1_ssc" "$dtf1"
     }
 }
 
 #
-# if no SSC was detected, we either copy or unzip the archive evt1
+# if no SSC was detected, we either copy or unzip the archive evt1, dtf1
 # to cwd
 #
 [ ! -f $outdir/patch_hrc_ssc${ID}.log ] || \grep -q '^SSC not detected' $outdir/patch_hrc_ssc${ID}.log && {
@@ -157,7 +158,14 @@ true && {
 	\cp "$evt1_old" "$evt1_old_tmp"
     }
     evt1_old="$evt1_old_tmp"
-    dtf1=$(get_dtf1 "$indir")
+
+    dtf1=${asol1/asol1/dtf1}
+    dtf1_old=$(get_dtf1 "$indir")
+    [[ "$dtf1_old" =~ .gz$ ]] && {
+	gzip -dc "$evt1_old" > "$dtf1"
+    } || {
+	\cp "$dtf1_old" "$dtf1"
+    }
 }
 
 #ngti=$(flt1_good "$flt1")
