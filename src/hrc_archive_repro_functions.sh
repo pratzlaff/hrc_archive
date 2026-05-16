@@ -229,7 +229,7 @@ make_response()
     local x y
     read x y <<<$( dmlist "$evt2"'[region][col sky]' data,raw | \head -2 | \tail -1 )
 
-    local asphist="$outdir/${obsid}_asphist.fits"
+    local asphist="$outdir/${obsid}${ID}_asphist.fits"
     punlearn asphist
     asphist \
         "$asol1" \
@@ -237,8 +237,8 @@ make_response()
         "$evt2" \
         "$dtf1"
 
-    local arf="$outdir/tg/hrcf${obsid}_0th.arf"
-    local rmffile=$(\ls "$outdir/tg/hrcf${obsid}_"*"_p1.rmf" | \tail -1)
+    local arf="$outdir/tg/hrcf${obsid}${ID}_0th.arf"
+    local rmffile=$(\ls "$outdir/tg/hrcf${obsid}${ID}_"*"_p1.rmf" | \tail -1)
     local grating=$(dmkeypar "$pha2" grating ec+)
     punlearn mkarf
     mkarf \
