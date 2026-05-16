@@ -451,3 +451,45 @@ true && cleanup_files
 
 done
 
+if [ $nID -gt 1 ]
+then
+    [ $nID -gt 2 ] && {
+	\echo "FIXME: cannot handle links for $nID evt1 files" >&2
+	exit
+    }
+
+    read ID1 ID2 <<<$(perl -le 'chomp(@lines=<>); print join " ",@lines' <<<"$IDS")
+
+    for ln_targ in "$outdir"/*${obsid}$ID1*
+    do
+	ln_name="$outdir/"$(sed s/$ID1// <<<$(basename "$ln_targ"))
+	ln -fs $(basename "$ln_targ") "$ln_name"
+    done
+
+    [ -d "$outdir/tg" ] && {
+	for ln_targ in "$outdir"/tg/*${obsid}$ID1*
+	do
+	    ln_name="$outdir/tg/"$(sed s/$ID1// <<<$(basename "$ln_targ"))
+	    ln -fs $(basename "$ln_targ") "$ln_name"
+	done
+    }
+
+    obsid2=$(( $(sed s/^0*// <<<$obsid) + 90000 ))
+    newoutdir=$(dirname $(dirname "$outdir"))/$obsid2/analysis
+    rm -rf $newoutdir
+    mkdir -p "$newoutdir"
+    for ln_targ in "$outdir"/*${obsid}$ID2*
+    do
+	ln_name="$newoutdir"/$(sed s/${obsid}${ID2}/${obsid2}/ <<<$(basename "$ln_targ"))
+	ln -fs ../../$obsid/analysis/$(basename "$ln_targ") "$ln_name"
+    done
+
+    [ -d "$outdir/tg" ] && {
+	mkdir -p "$newoutdir/tg"
+	for ln_targ in "$outdir"/tg/*${obsid}$ID2*
+	do
+	    ln_name="$newoutdir/tg/"$(sed s/${obsid}${ID2}/${obsid2}/ <<<$(basename "$ln_targ"))
+	    ln -fs ../../../$obsid/analysis/tg/$(basename "$ln_targ") "$ln_name"
+	done
+    }
+fi
