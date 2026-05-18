@@ -1,14 +1,18 @@
 #! /bin/bash
 
+umask 022
+
 set -eo pipefail
 
 [ $# -eq 2 ] || {
-    \echo "Usage: $0 obsid outdir" 1>&2
+    \echo "Usage: $0 obsid archivedir" >&2
     exit 1
 }
 
 obsid=$(printf %05d $(sed 's/^0*//' <<< "$1"))
-outdir="$2"
+archivedir="$2"
+
+outdir="$archivedir"
 
 SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
@@ -30,10 +34,9 @@ cleanup_files() {
 	"$dtfstats" \
 	"$src2a" \
 	"$L2a"'
-    [ $obsid -eq 28377 -o $obsid -eq 28427 ] || cmd+=' "$bpix1" "$dtf1" '
+    [[ ! $obsid =~ 28377|28427 ]] && cmd+=' "$bpix1" "$dtf1" '
     eval "$cmd"
 }
-
 
 \rm -rf "$outdir/incomplete/$obsid"
 mkdir -p "$outdir/incomplete/$obsid"
@@ -202,6 +205,16 @@ punlearn geom
 pset geom instruments=/data/legs/rpete/flight/hrc_archive/new_geom.fits
 
 #
+# special cases of t_gmap
+# 14238:             hrcsD2012-03-29t_gmapN0004.fits
+# 14324,14396,14397: hrcsD1999-07-22t_gmapN0004.fits
+#
+gainfile=
+[[ $obsid =~ 14238|14324|14396|14397 ]] && {
+    gainfile="gainfile=$(match_caldb_file "$evt1_old" t_gmap)"
+}
+
+#
 # Usual hpe run.
 #
 evt1=${bpix1/bpix/evt}
@@ -214,7 +227,7 @@ hrc_process_events \
     badfile=NONE \
     do_amp_sf_cor=yes \
     obsfile="$obs_par" \
-    $(gainfile_cases $obsid) \
+    $gainfile \
     cl+
 r4_header_update "$evt1"
 
@@ -266,7 +279,7 @@ hrc_process_events \
     badfile=NONE \
     do_amp_sf_cor=yes \
     obsfile="$obs_par_deroll" \
-    $(gainfile_cases $obsid) \
+    $gainfile \
     cl+
 r4_header_update "$evt1_deroll"
 
@@ -458,6 +471,10 @@ grating=$(pquery "$obs_par" grating)
 true && cleanup_files
 
 done
+
+[[ $obsid =~ 28377|28427 ]] && {
+    $SCRIPTDIR//treat_HV_change.sh "$archivedir" $obsid
+}
 
 if [ $nID -gt 1 ]
 then

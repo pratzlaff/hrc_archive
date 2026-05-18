@@ -9,12 +9,31 @@ set -eo pipefail
 
 n=4
 
-outdir=/data/loss/rpete/hrc
 script=/data/legs/rpete/flight/hrc_archive/src/process_archive_obsids.sh
 parallel=/data/legs/rpete/flight/hrc_archive/src/parallel
 
-. /home/rpete/python3_venv/bin/activate
-obsids=$(python3 /data/legs/rpete/flight/hrc_archive/src/obsids.py)
-deactivate
+false && {
+  . /home/rpete/python3_venv/bin/activate
+  obsids=$(python3 /data/legs/rpete/flight/hrc_archive/src/obsids.py --no-ignore_existing --start 1999-07-01)
+  deactivate
+  outdir=/data/loss/rpete/hrc
+}
 
-time "$parallel" --dry-run -j $n bash "$script" "$outdir" ::: $obsids
+true && {
+  obsids=$(cat /data/legs/rpete/flight/hrc_archive/obsids_hz43)
+  outdir=/data/loss/rpete/hz43_patch_hrc_ssc
+}
+
+false && {
+    obsids='01411 00279 00108 02547 03764'
+    outdir=/data/loss/rpete/hrc
+}
+
+false && {
+    obsids='28377 28427 01011'
+    outdir=/data/loss/rpete/test
+}
+
+mkdir -p "$outdir"
+
+time "$parallel" -j $n "$script" "$outdir" ::: $obsids

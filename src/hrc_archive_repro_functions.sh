@@ -1,5 +1,7 @@
 #! /bin/bash
 
+. $SCRIPTDIR/caldb_files.sh
+
 download_data()
 {
     [ $# -eq 2 ] || {
@@ -150,8 +152,35 @@ rangelev_widthres_set()
 
 make_response()
 {
+    # requires these to be set:
+    # $obsid
+    # $evt2a
+    # $pha2
+    # $asol1
+    # $dtf1
+    # $bpix1
+    # $outdir = analysis
+
     local evt2="$evt2a"
     local rmfdir=../../../../../hrc/rmfs
+
+    [[ $obsid =~ 14238|14324|14396|14397|62639|62635|78427|78377 ]] && {
+	case "$detnam" in
+	    hrc-i) qefile=$(match_caldb_file "$pha2" qe)
+		   pset ardlib AXAF_HRC-I_QE_FILE="$qefile"
+		   ;;
+	    hrc-s) qefile=$(match_caldb_file "$pha2" qe)
+		   qeufile=$(match_caldb_file "$pha2" qeu)
+		   for i in {1..3};
+		   do
+		       pset ardlib AXAF_HRC-S${i}_QEU_FILE="$qeufile[AXAF_QEU${i}]"
+		       pset ardlib AXAF_HRC-S${i}_QE_FILE="$qefile[AXAF_QE${i}]"
+		   done
+		   ;;
+	    *) \echo "DETNAM='$detnam' unhandled" >&2
+	       exit 1
+	esac
+    }
 
     case "$detnam" in
         hrc-i*) detsubsys=HRC-I
@@ -170,8 +199,8 @@ make_response()
     local row=0
     dmlist "$pha2"'[cols tg_m, tg_part]' data,raw | \grep -v '^#' | while read line
     do
-	(( row++ ))
-        read tg_m tg_part <<<$(echo "$line")
+	row=$(( row+1 ))
+	read tg_m tg_part <<<$(echo "$line")
 	case "$tg_part" in
 	    1) grating_arm=HEG ;;
 	    2) grating_arm=MEG ;;
@@ -235,7 +264,8 @@ make_response()
         "$asol1" \
         "$asphist" \
         "$evt2" \
-        "$dtf1"
+        "$dtf1" \
+        cl+
 
     local arf="$outdir/tg/hrcf${obsid}${ID}_0th.arf"
     local rmffile=$(\ls "$outdir/tg/hrcf${obsid}${ID}_"*"_p1.rmf" | \tail -1)
