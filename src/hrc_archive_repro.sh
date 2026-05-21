@@ -337,27 +337,28 @@ dmcopy "$evt2_deroll[cols y2=y,x2=x]" "${evt2_deroll}.tmp" cl+
 #
 # create barycentric-corrected file
 #
-eph1=$(\ls -1 "$indir"/primary/orbitf*_eph1.fits* | head -$nID | tail -1)
-neph1=$(echo "$eph1" | wc -w)
-[ $neph1 -eq 1 ] || {
-    echo "FIXME: found $neph1 eph1 files in '$indir/primary'" >&2
-    exit
-}
+eph1=$(\ls -1 "$indir"/primary/orbitf*_eph1.fits* 2>/dev/null | head -$nID | tail -1) || :
 ra_targ=$(dmkeypar "$evt2" ra_targ ec+)
 dec_targ=$(dmkeypar "$evt2" dec_targ ec+)
 [ -z "$ra_targ" -o -z "$dec_targ" ] && {
     echo "FIXME: did not find (RA|DEC)_TARG in '$evt2'" >&2
     exit
 }
-evt2_bary=${evt2/evt2/evt2_bary}
-punlearn axbary
-axbary "$evt2" "$eph1" "$evt2_bary" $ra_targ $dec_targ cl+
 
-#
-# retain only times, eqpos in axbary_mist
-#
+evt2_bary=${evt2/evt2/evt2_bary}
 evt2_bary_misc=${evt2/evt2/evt2_bary_misc}
-dmcopy "${evt2_bary}[col time, eqpos]" "${evt2_bary_misc}" cl+
+[ -n "$eph1" ] && {
+    punlearn axbary
+    axbary "$evt2" "$eph1" "$evt2_bary" $ra_targ $dec_targ cl+
+
+    #
+    # retain only times, eqpos in axbary_misc
+    #
+    dmcopy "${evt2_bary}[col time, eqpos]" "${evt2_bary_misc}" cl+
+} || {
+    dmcopy "${evt2}[col eqpos]" "${evt2_bary_misc}" cl+
+}
+
 
 grating=$(pquery "$obs_par" grating)
 
@@ -365,16 +366,14 @@ grating=$(pquery "$obs_par" grating)
     #
     # get source coordinates...
     #
-    ra=$(dmkeypar "$evt2" ra_targ ec+)
-    dec=$(dmkeypar "$evt2" dec_targ ec+)
     punlearn dmcoords
     dmcoords \
 	infile="$evt2" \
 	asolfile="$asol1" \
 	option=cel \
 	celfmt=deg \
-	ra="$ra" \
-	dec="$dec" \
+	ra="$ra_targ" \
+	dec="$dec_targ" \
 	verbose=1
     x=$(pget dmcoords x)
     y=$(pget dmcoords y)
