@@ -362,7 +362,9 @@ evt2_bary_misc=${evt2/evt2/evt2_bary_misc}
 
 # generate TAILGATE column, paste to ${evt2_bary_misc}
 evt2_tailgate=${evt2/evt2/evt2_tailgate}
-python "$SCRIPTDIR"/tailgate_flag.py "${evt2}" "${evt2_tailgate}"
+. /home/rpete/python3_venv_ciao/bin/activate
+python3 "$SCRIPTDIR"/tailgate_flag.py "${evt2}" "${evt2_tailgate}"
+deactivate
 punlearn dmpaste
 dmpaste "${evt2_bary_misc}" "${evt2_tailgate}" "${evt2_bary_misc}.tmp" cl+
 \mv "${evt2_bary_misc}.tmp" "${evt2_bary_misc}"
