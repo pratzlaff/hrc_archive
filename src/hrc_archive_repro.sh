@@ -29,6 +29,7 @@ cleanup_files() {
 	"$flt_evt1_deroll" \
 	"$evt2_deroll" \
 	"$evt2_bary" \
+        "$evt2_tailgate" \
 	"${evt2_deroll}.tmp" \
 	"$flt1_ssc" \
 	"$dtfstats" \
@@ -359,6 +360,12 @@ evt2_bary_misc=${evt2/evt2/evt2_bary_misc}
     dmcopy "${evt2}[col eqpos]" "${evt2_bary_misc}" cl+
 }
 
+# generate TAILGATE column, paste to ${evt2_bary_misc}
+evt2_tailgate=${evt2/evt2/evt2_tailgate}
+python "$SCRIPTDIR"/tailgate_flag.py "${evt2}" "${evt2_tailgate}"
+punlearn dmpaste
+dmpaste "${evt2_bary_misc}" "${evt2_tailgate}" "${evt2_bary_misc}.tmp" cl+
+\mv "${evt2_bary_misc}.tmp" "${evt2_bary_misc}"
 
 grating=$(pquery "$obs_par" grating)
 
