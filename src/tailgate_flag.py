@@ -4,7 +4,10 @@ import numpy as np
 import os
 import sys
 
-import numpy as np
+# From
+#   https://cxc.cfa.harvard.edu/contrib/juda/memos/hrc_pileup/
+#   https://cxc.cfa.harvard.edu/contrib/juda/memos/hrc_pileup/deltatime_flag.py
+#
 
 # # from https://www.google.com/search?q=astropy.io.fits+bitfield
 # # Define 5 bits of data per row for 3 rows
@@ -46,7 +49,6 @@ def tailgate_flag(args):
                         break
         bit_col = astropy.io.fits.Column(name='TAILGATE', format='1X', array=flag)
         hdu = astropy.io.fits.BinTableHDU.from_columns([bit_col])
-        print(outfile)
         hdu.writeto(outfile, overwrite=True, checksum=True)
 
 def main():

@@ -29,7 +29,7 @@ cleanup_files() {
 	"$flt_evt1_deroll" \
 	"$evt2_deroll" \
 	"$evt2_bary" \
-        "$evt2_tailgate" \
+        "$evt1_tailgate" \
 	"${evt2_deroll}.tmp" \
 	"$flt1_ssc" \
 	"$dtfstats" \
@@ -305,6 +305,15 @@ punlearn geom
     order_list='-1,1'
 }
 
+# generate TAILGATE column, paste to evt1
+evt1_tailgate=${evt1/evt1/evt1_tailgate}
+. /home/rpete/python3_venv/bin/activate
+python3 "$SCRIPTDIR"/tailgate_flag.py "${evt1}" "${evt1_tailgate}"
+deactivate
+punlearn dmpaste
+dmpaste "${evt1}" "${evt1_tailgate}" "${evt1}.tmp" cl+
+\mv "${evt1}.tmp" "${evt1}"
+
 flt_evt1=${evt1/evt1/flt_evt1}
 dmcopy "${evt1}[status=$filter]" "$flt_evt1" cl+
 flt_evt1_deroll=${evt1/evt1/flt_evt1_deroll}
@@ -353,20 +362,15 @@ evt2_bary_misc=${evt2/evt2/evt2_bary_misc}
     axbary "$evt2" "$eph1" "$evt2_bary" $ra_targ $dec_targ cl+
 
     #
-    # retain only times, eqpos in axbary_misc
+    # retain only times, eqpos in bary_misc
     #
     dmcopy "${evt2_bary}[col time, eqpos]" "${evt2_bary_misc}" cl+
 } || {
     dmcopy "${evt2}[col eqpos]" "${evt2_bary_misc}" cl+
 }
 
-# generate TAILGATE column, paste to ${evt2_bary_misc}
-evt2_tailgate=${evt2/evt2/evt2_tailgate}
-. /home/rpete/python3_venv_ciao/bin/activate
-python3 "$SCRIPTDIR"/tailgate_flag.py "${evt2}" "${evt2_tailgate}"
-deactivate
-punlearn dmpaste
-dmpaste "${evt2_bary_misc}" "${evt2_tailgate}" "${evt2_bary_misc}.tmp" cl+
+# paste TAILGATE column to bary_misc
+dmpaste "${evt2_bary_misc}" "${evt2}[col tailgate]" "${evt2_bary_misc}.tmp" cl+
 \mv "${evt2_bary_misc}.tmp" "${evt2_bary_misc}"
 
 grating=$(pquery "$obs_par" grating)
