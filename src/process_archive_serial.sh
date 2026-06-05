@@ -7,7 +7,7 @@ set -eo pipefail
   exit 1
 }
 
-outdir=/data/loss/rpete/hrc
+outdir=/data/hrc
 script=/data/legs/rpete/flight/hrc_archive/src/process_archive_obsids.sh
 
 . /home/rpete/python3_venv/bin/activate

@@ -6,15 +6,15 @@ deactivate
 
 for o in $obsids
 do
-  [ -d /data/loss/rpete/hrc/[is]/$o/hk ] || {
+  [ -d /data/hrc/[is]/$o/hk ] || {
     echo "no hk dir for $o" 1>&2
     continue
   }
 
-  [ -d /data/loss/rpete/hrc/i/$o/hk ] && {
-    outdir=/data/loss/rpete/hrc/i/$o/hk
+  [ -d /data/hrc/i/$o/hk ] && {
+    outdir=/data/hrc/i/$o/hk
   } || {
-    outdir=/data/loss/rpete/hrc/s/$o/hk
+    outdir=/data/hrc/s/$o/hk
   }
 
   echo $outdir

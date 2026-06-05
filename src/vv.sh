@@ -1,9 +1,8 @@
 #! /bin/bash
 
-set -e
-set -o pipefail
+set -eo pipefail
 
-outdir=/data/loss/rpete/hrc
+outdir=/data/hrc
 
 . ~/.bash_aliases
 shopt -s expand_aliases nocasematch

@@ -12,7 +12,7 @@ def main():
     )
     parser.add_argument('--start', default=(datetime.datetime.now(datetime.UTC)-datetime.timedelta(weeks=2)).strftime('%Y-%m-%d'), help='Start date.')
     parser.add_argument('--stop', default=datetime.datetime.now(datetime.UTC).strftime('%Y-%m-%d'), help='Stop date.')
-    parser.add_argument('--basedir', default='/data/loss/rpete/hrc', help='Where to look for existing reprocessed data.')
+    parser.add_argument('--basedir', default='/data/hrc', help='Where to look for existing reprocessed data.')
     parser.add_argument('--ignore_existing', default=True, action=argparse.BooleanOptionalAction, help='Ignore existing ObsIDs in basedir.')
     args = parser.parse_args()
 

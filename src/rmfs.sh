@@ -1,7 +1,7 @@
 #! /bin/bash
 
 indir=/data/legs/rpete/flight/rmfs
-outdir=/data/loss/rpete/hrc/rmfs
+outdir=/data/hrc/rmfs
 
 mkdir -p $outdir
 
