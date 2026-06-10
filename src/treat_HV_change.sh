@@ -1,6 +1,6 @@
 #! /bin/bash
 
-umask 022
+umask 002
 
 set -eo pipefail
 

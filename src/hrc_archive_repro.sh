@@ -1,6 +1,6 @@
 #! /bin/bash
 
-umask 022
+umask 002
 
 set -eo pipefail
 
@@ -203,7 +203,7 @@ punlearn hrc_build_badpix
 hrc_build_badpix CALDB "$bpix1" "$obs_par" degapfile=CALDB cl+
 
 punlearn geom
-pset geom instruments="$SCRIPTDIR"/../data/new_geom.fits"
+pset geom instruments="$SCRIPTDIR"/../data/new_geom.fits
 
 #
 # special cases of t_gmap
