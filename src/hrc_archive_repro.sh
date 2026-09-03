@@ -30,7 +30,6 @@ cleanup_files() {
 	"$evt2_deroll" \
 	"$evt2_bary" \
         "$evt1_tailgate" \
-	"${evt2_deroll}.tmp" \
 	"$flt1_ssc" \
 	"$dtfstats" \
 	"$src2a" \
@@ -166,7 +165,7 @@ true && {
     dtf1=${asol1/asol1/dtf1}
     dtf1_old=$(get_dtf1 "$indir")
     [[ "$dtf1_old" =~ .gz$ ]] && {
-	gzip -dc "$evt1_old" > "$dtf1"
+	gzip -dc "$dtf1_old" > "$dtf1"
     } || {
 	\cp "$dtf1_old" "$dtf1"
     }
@@ -338,12 +337,6 @@ true && {
     }
 }
 
-# Extract unrolled sky coordinates. Columns must be reordered to
-# remove the sky vector, so that they can later be merged with the
-# evt2{,a}.
-punlearn dmcopy
-dmcopy "$evt2_deroll[cols y2=y,x2=x]" "${evt2_deroll}.tmp" cl+
-
 #
 # create barycentric-corrected file
 #
@@ -356,22 +349,22 @@ dec_targ=$(dmkeypar "$evt2" dec_targ ec+)
 }
 
 evt2_bary=${evt2/evt2/evt2_bary}
-evt2_bary_misc=${evt2/evt2/evt2_bary_misc}
+evt2_deroll_bary_tailgate=${evt2/evt2/evt2_deroll_bary_tailgate}
+
+dmcopy "${evt2_deroll}[col x,y]" "${evt2_deroll_bary_tailgate}" cl+
+
 [ -n "$eph1" ] && {
     punlearn axbary
     axbary "$evt2" "$eph1" "$evt2_bary" $ra_targ $dec_targ cl+
-
-    #
-    # retain only times, eqpos in bary_misc
-    #
-    dmcopy "${evt2_bary}[col time, eqpos]" "${evt2_bary_misc}" cl+
+    dmpaste "${evt2_deroll_bary_tailgate}" "${evt2_bary}[col time]" "${evt2_deroll_bary_tailgate}.tmp" cl+
+    \mv "${evt2_deroll_bary_tailgate}.tmp" "${evt2_deroll_bary_tailgate}"
 } || {
-    dmcopy "${evt2}[col eqpos]" "${evt2_bary_misc}" cl+
+    echo "FIXME: did not find orbitf eph1 file in '$indir/primary'" >&2
 }
 
-# paste TAILGATE column to bary_misc
-dmpaste "${evt2_bary_misc}" "${evt2}[col tailgate]" "${evt2_bary_misc}.tmp" cl+
-\mv "${evt2_bary_misc}.tmp" "${evt2_bary_misc}"
+# paste TAILGATE column to deroll_bary_tailgate
+dmpaste "${evt2_deroll_bary_tailgate}" "${evt2}[col tailgate]" "${evt2_deroll_bary_tailgate}.tmp" cl+
+\mv "${evt2_deroll_bary_tailgate}.tmp" "${evt2_deroll_bary_tailgate}"
 
 grating=$(pquery "$obs_par" grating)
 
@@ -402,16 +395,28 @@ grating=$(pquery "$obs_par" grating)
 	zo_pos_x="$x" zo_pos_y="$y" \
 	cl+
     nsources=$(dmlist "$src2a" header,raw | grep -i naxis2 | perl -anle 'print $F[5]')
+
+    false && {
+	[ $nsources -gt 0 ] || {
+	    punlearn celldetect
+	    celldetect \
+		infile="$evt2" \
+		outfile="$src2a" \
+		fixedcell=6 \
+		maxlog=4096 \
+		cl+
+	    nsources=$(dmlist "$src2a" header,raw | grep -i naxis2 | perl -anle 'print $F[5]')
+	}
+    }
+
     [ $nsources -gt 0 ] || {
 	\echo "FIXME: no sources detected in '$evt2'" >&2
-
-        punlearn dmpaste
-        dmpaste "${evt2}" "${evt2_deroll}.tmp[col x2,y2]" "${evt2}.tmp" cl+
-        \mv "${evt2}.tmp" "${evt2}"
-
+	rm -f "$outdir"/_*.fits
 	cleanup_files
 	exit
     }
+
+    [ $nsources -gt 1 ] && \echo "FIXME: nsources=$nsources" >&2
 
     L2a=${evt1/evt1/evt2_L1a}
     punlearn tg_create_mask
@@ -432,12 +437,6 @@ grating=$(pquery "$obs_par" grating)
 	acaofffile="$asol1" \
 	osipfile=none \
 	cl+
-
-    #
-    # paste the deroll coordinates
-    #
-    dmpaste "${evt2a}" "${evt2_deroll}.tmp[col x2, y2]" "${evt2a}.tmp" cl+
-    \mv "${evt2a}.tmp" "${evt2a}"
 
     #
     # (tg_mlam, pi) filter
@@ -474,10 +473,6 @@ grating=$(pquery "$obs_par" grating)
 
     \mv "$evt2a" "$evt2"
 
-} || {
-    punlearn dmpaste
-    dmpaste "${evt2}" "${evt2_deroll}.tmp[col x2,y2]" "${evt2}.tmp" cl+
-    \mv "${evt2}.tmp" "${evt2}"
 }
 
 true && cleanup_files
