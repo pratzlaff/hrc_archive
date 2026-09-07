@@ -1,6 +1,6 @@
 #! /bin/bash
 
-. $SCRIPTDIR/caldb_files.sh
+. "$SCRIPTDIR"/caldb_files.sh
 
 download_data()
 {
@@ -238,7 +238,7 @@ make_response()
 	punlearn mkgarf
 	punlearn fullgarf
 	\mkdir -p "$outdir/fullgarf"
-	$SCRIPTDIR/fullgarf \
+	"$SCRIPTDIR"/fullgarf \
             "$pha2" \
             "$row" \
             "$evt2" \

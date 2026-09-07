@@ -39,7 +39,7 @@ reset_u=0
 ciao
 [ $reset_u -eq 1 ] && set -u
 
-. $SCRIPTDIR/tmppdir.sh
+. "$SCRIPTDIR"/tmppdir.sh
 
 
 ra_targ=$(dmkeypar "$evt2" ra_targ ec+)

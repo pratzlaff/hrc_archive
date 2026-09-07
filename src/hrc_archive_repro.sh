@@ -59,7 +59,7 @@ reset_u=0
 ciao
 [ $reset_u -eq 1 ] && set -u
 
-. $SCRIPTDIR/tmppdir.sh
+. "$SCRIPTDIR"/tmppdir.sh
 
 punlearn ardlib
 
@@ -480,7 +480,7 @@ true && cleanup_files
 done
 
 [[ $obsid =~ 28377|28427 ]] && {
-    $SCRIPTDIR//treat_HV_change.sh "$archivedir" $obsid
+    "$SCRIPTDIR"/treat_HV_change.sh "$archivedir" $obsid
 }
 
 if [ $nID -gt 1 ]
