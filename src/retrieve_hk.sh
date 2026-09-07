@@ -1,7 +1,9 @@
 #! /bin/bash
 
+SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 . ~/python3_venv/bin/activate
-obsids=$(python3 /data/legs/rpete/flight/hrc_archive/src/obsids.py --no-ignore_existing)
+obsids=$(python3 "$SCRIPTDIR"/obsids.py --no-ignore_existing)
 deactivate
 
 for o in $obsids

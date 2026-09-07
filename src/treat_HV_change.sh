@@ -14,7 +14,7 @@ obsids_="$@"
 
 SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-. $SCRIPTDIR/hrc_archive_repro_functions.sh
+. "$SCRIPTDIR"/hrc_archive_repro_functions.sh
 
 . ~/.bash_aliases
 shopt -s expand_aliases nocasematch
@@ -30,7 +30,7 @@ reset_u=0
 ciao
 [ $reset_u -eq 1 ] && set -u
 
-. $SCRIPTDIR/tmppdir.sh
+. "$SCRIPTDIR"/tmppdir.sh
 
 declare -A time obsids tg_order_list outdirs
 

@@ -4,6 +4,8 @@
 
 set -eo pipefail
 
+SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 [ $# -gt 0 ] || {
   \echo "Usage: outdir [obsid1 obsid2 ...]" 1>&2
   exit 1
@@ -19,7 +21,7 @@ shift
 obsids="$@"
 emails='pratzlaff@cfa.harvard.edu'
 
-script=/data/legs/rpete/flight/hrc_archive/src/hrc_archive_repro.sh
+script="$SCRIPTDIR"/hrc_archive_repro.sh
 logdir="$outdir/incomplete"
 mkdir -p "$logdir"
 

@@ -7,11 +7,13 @@ set -eo pipefail
   exit 1
 }
 
+SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 outdir=/data/hrc
-script=/data/legs/rpete/flight/hrc_archive/src/process_archive_obsids.sh
+script="$SCRIPTDIR"/process_archive_obsids.sh
 
 . /home/rpete/python3_venv/bin/activate
-obsids=$(python3 /data/legs/rpete/flight/hrc_archive/src/obsids.py)
+obsids=$(python3 "$SCRIPTDIR"/obsids.py)
 deactivate
 
 time bash "$script" "$outdir" $obsids

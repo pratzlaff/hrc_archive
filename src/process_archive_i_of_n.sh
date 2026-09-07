@@ -2,6 +2,8 @@
 
 # process set i of n for either I or S detector
 
+SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+
 set -eo pipefail
 
 [ $# -eq 4 ] || {
@@ -19,7 +21,7 @@ n=$4
   exit 1
 }
 
-script=/data/legs/rpete/flight/hrc_archive/src/process_archive_obsids.sh
+script="$SCRIPTDIR"/process_archive_obsids.sh
 
 . /data/legs/rpete/flight/analysis_functions/util.bash
 

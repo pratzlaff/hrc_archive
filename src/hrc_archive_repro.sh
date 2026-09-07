@@ -16,7 +16,7 @@ outdir="$archivedir"
 
 SCRIPTDIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 
-. $SCRIPTDIR/hrc_archive_repro_functions.sh
+. "$SCRIPTDIR"/hrc_archive_repro_functions.sh
 
 cleanup_files() {
     cmd='\rm -f \
