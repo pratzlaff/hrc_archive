@@ -37,8 +37,7 @@ def count_keywords(hdr, basename):
 
 def addwcs(args):
 
-    wcs = get_deroll_wcs(args.evt2_deroll)
-    print(wcs)
+    wcs = get_deroll_wcs(args.evt2_deroll_wcs)
     with astropy.io.fits.open(args.evt2) as hdulist:
         hdr = hdulist['events'].header
 
@@ -72,7 +71,7 @@ def main():
     parser = argparse.ArgumentParser(
         description='Add WCS info for deroll columns'
     )
-    parser.add_argument('evt2_deroll', help='Input event list with derolled coordinates.')
+    parser.add_argument('evt2_deroll_wcs', help='Input event list with derolled coordinates.')
     parser.add_argument('evt2', help='Input event list with derolled coordinates.')
     parser.add_argument('outfile', help='Output FITS file.')
     args = parser.parse_args()
