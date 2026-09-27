@@ -8,7 +8,7 @@ def get_ttype(hdr, keyword):
             if hdr[f'ttype{i}'].lower() == keyword:
                 return i
         except:
-            return None
+            raise
 
 def get_deroll_wcs(evt2):
     with astropy.io.fits.open(evt2) as hdulist:
@@ -49,9 +49,6 @@ def addwcs(args):
 
         hdr[f'MTYPE{mtypes+1}'] = 'sky_deroll'
         hdr[f'MFORM{mtypes+1}'] = 'xderoll,yderoll',
-
-        hdr[f'MTYPE{mtypes+2}'] = 'EQPOS'
-        hdr[f'MFORM{mtypes+2}'] = 'RA,DEC'
 
         hdr[f'TCTYP{xderoll}'] = wcs['tctyp']['x']
         hdr[f'TCRVL{xderoll}'] = wcs['tcrvl']['x']
