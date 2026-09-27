@@ -479,7 +479,7 @@ grating=$(pquery "$obs_par" grating)
 evt2_deroll_tmp=${evt2/evt2/evt2_deroll_tmp}
 dmcopy "${evt2_deroll_bary_tailgate}[col yderoll=y, xderoll=x]" "${evt2_deroll_tmp}"
 dmpaste "$evt2" "${evt2_deroll_tmp}[col xderoll, yderoll]" "$evt2.tmp"
-dmappend "$evt2[region]" "$evt2.tmp"
+dmlist "$evt2" blocks | grep -i region && dmappend "$evt2[region]" "$evt2.tmp"
 python3 "$SCRIPTDIR"/add_deroll_wcs.py "${evt2_deroll_bary_tailgate}" "$evt2.tmp" "$evt2"
 \rm -f "${evt2_deroll_tmp}" "$evt2.tmp"
 deactivate
