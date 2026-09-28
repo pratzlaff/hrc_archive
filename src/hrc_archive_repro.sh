@@ -26,8 +26,6 @@ cleanup_files() {
 	"$obs_par_deroll" \
 	"$evt1_deroll" \
 	"$flt_evt1" \
-	"$flt_evt1_deroll" \
-	"$evt2_deroll" \
 	"$evt2_bary" \
         "$evt1_tailgate" \
 	"$flt1_ssc" \
@@ -283,6 +281,11 @@ hrc_process_events \
     cl+
 r4_header_update "$evt1_deroll"
 
+mtype=$(dmlist "${evt1_deroll}" header,raw | grep MTYPE | grep sky | perl -anle 'print $F[3]' | sed 's/^.//')
+dmhedit "${evt1_deroll}" none add $mtype sky_deroll
+dmpaste "$evt1" "${evt1_deroll}[col x_deroll=x, y_deroll=y]" "$evt1".tmp cl+
+\mv "$evt1".tmp "$evt1"
+
 punlearn geom
 
 #
@@ -315,16 +318,12 @@ dmpaste "${evt1}" "${evt1_tailgate}" "${evt1}.tmp" cl+
 
 flt_evt1=${evt1/evt1/flt_evt1}
 dmcopy "${evt1}[status=$filter]" "$flt_evt1" cl+
-flt_evt1_deroll=${evt1/evt1/flt_evt1_deroll}
-dmcopy "${evt1_deroll}[status=$filter]" "$flt_evt1_deroll" cl+
 
 #
 # GTI filter
 #
 evt2=${evt1/evt1/evt2}
 dmcopy "$flt_evt1[events][@${flt1}]" "$evt2" cl+
-evt2_deroll=${evt1/evt1/deroll_evt2}
-dmcopy "$flt_evt1_deroll[events][@${flt1}]" "$evt2_deroll" cl+
 
 #
 # correct LIVETIME, EXPOSURE, DTCOR
@@ -349,22 +348,18 @@ dec_targ=$(dmkeypar "$evt2" dec_targ ec+)
 }
 
 evt2_bary=${evt2/evt2/evt2_bary}
-evt2_deroll_bary_tailgate=${evt2/evt2/evt2_deroll_bary_tailgate}
-
-dmcopy "${evt2_deroll}[col x,y]" "${evt2_deroll_bary_tailgate}" cl+
+evt2_bary_tailgate=${evt2/evt2/evt2_bary_tailgate}
 
 [ -n "$eph1" ] && {
     punlearn axbary
     axbary "$evt2" "$eph1" "$evt2_bary" $ra_targ $dec_targ cl+
-    dmpaste "${evt2_deroll_bary_tailgate}" "${evt2_bary}[col time]" "${evt2_deroll_bary_tailgate}.tmp" cl+
-    \mv "${evt2_deroll_bary_tailgate}.tmp" "${evt2_deroll_bary_tailgate}"
+    dmcopy "${evt2_bary}[col time]" "${evt2_bary_tailgate}" cl+
+    dmpaste "${evt2_bary_tailgate}" "${evt2}[col tailgate]" "${evt2_bary_tailgate}.tmp" cl+
+    \mv "${evt2_bary_tailgate}.tmp" "${evt2_bary_tailgate}"
 } || {
     echo "FIXME: did not find orbitf eph1 file in '$indir/primary'" >&2
+    dmcopy "${evt2}[col tailgate]" "${evt2_bary_tailgate}" cl+
 }
-
-# paste TAILGATE column to deroll_bary_tailgate
-dmpaste "${evt2_deroll_bary_tailgate}" "${evt2}[col tailgate]" "${evt2_deroll_bary_tailgate}.tmp" cl+
-\mv "${evt2_deroll_bary_tailgate}.tmp" "${evt2_deroll_bary_tailgate}"
 
 grating=$(pquery "$obs_par" grating)
 
@@ -427,6 +422,7 @@ grating=$(pquery "$obs_par" grating)
 	grating_obs=header_value \
 	cl+
 
+
     evt2a=${evt1/evt1/evt2a}
     punlearn tg_resolve_events
     tg_resolve_events \
@@ -437,6 +433,8 @@ grating=$(pquery "$obs_par" grating)
 	acaofffile="$asol1" \
 	osipfile=none \
 	cl+
+    dmpaste "$evt2a" "$evt2[col sky_deroll]" "$evt2a".tmp cl+
+    \mv "$evt2a".tmp "$evt2a"
 
     #
     # (tg_mlam, pi) filter
@@ -474,15 +472,6 @@ grating=$(pquery "$obs_par" grating)
     \mv "$evt2a" "$evt2"
 
 }
-
-. /home/rpete/python3_venv/bin/activate
-evt2_deroll_tmp=${evt2/evt2/evt2_deroll_tmp}
-dmcopy "${evt2_deroll_bary_tailgate}[col yderoll=y, xderoll=x]" "${evt2_deroll_tmp}"
-dmpaste "$evt2" "${evt2_deroll_tmp}[col xderoll, yderoll]" "$evt2.tmp"
-dmlist "$evt2" blocks | grep -i region && dmappend "$evt2[region]" "$evt2.tmp"
-python3 "$SCRIPTDIR"/add_deroll_wcs.py "${evt2_deroll_bary_tailgate}" "$evt2.tmp" "$evt2"
-\rm -f "${evt2_deroll_tmp}" "$evt2.tmp"
-deactivate
 
 true && cleanup_files
 
