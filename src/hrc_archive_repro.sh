@@ -404,24 +404,34 @@ grating=$(pquery "$obs_par" grating)
 	}
     }
 
-    [ $nsources -gt 0 ] || {
-	\echo "FIXME: no sources detected in '$evt2'" >&2
-	rm -f "$outdir"/_*.fits
-	cleanup_files
-	exit
-    }
-
     [ $nsources -gt 1 ] && \echo "FIXME: nsources=$nsources" >&2
 
     L2a=${evt1/evt1/evt2_L1a}
     punlearn tg_create_mask
-    tg_create_mask \
-	infile="$evt2" \
-	outfile="$L2a" \
-	input_pos_tab="$src2a" \
-	grating_obs=header_value \
-	cl+
-
+    if [ $nsources -gt 0 ]
+    then
+	tg_create_mask \
+	    infile="$evt2" \
+	    outfile="$L2a" \
+	    input_pos_tab="$src2a" \
+	    grating_obs=header_value \
+	    cl+
+    else
+	\echo "FIXME: no sources detected in '$evt2'" >&2
+	rm -f "$outdir"/_*.fits
+	tg_create_mask \
+	    infile="$evt2" \
+	    outfile="$L2a" \
+	    use_user_pars=yes \
+	    sA_zero_x=$x \
+	    sA_zero_y=$y \
+	    sA_zero_rad=150 \
+	    sA_width_heg=1000 \
+	    sA_width_meg=1000 \
+	    sA_width_leg=1000 \
+	    grating_obs=header_value \
+	    cl+
+    fi
 
     evt2a=${evt1/evt1/evt2a}
     punlearn tg_resolve_events
